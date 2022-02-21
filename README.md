@@ -18,7 +18,7 @@
 #### You write
 ```typescript
 import { AsyncForm } from 'rathernot/ui';
-import { AWSQueue } from 'rathernot/delivery';
+import { AWSQueue, DeliveryLocation } from 'rathernot/delivery';
 
 class ProvisioningRequest() implements AsyncForm {
 
@@ -30,13 +30,18 @@ class ProvisioningRequest() implements AsyncForm {
   ownerPosixGroup: string;
 
   //where we deliver the instances
-  getDelivery ({stage}) {
+  getDelivery ({stage}): DeliveryLocation {
     const deliveryQueue = stage.isProduction()
       ? "aws.sqs.arn.production.amazone.com"
       : "aws.sqs.arn.beta.amazone.com"
     return new AWSQueue(deliveryQueue);
   }
 }
+```
+
+#### You ship
+```sh
+$ rathernot ProvisioningRequest.ts
 ```
 
 #### You get
@@ -65,7 +70,7 @@ Today, using a form a la Google forms.  Tomorrow: forms, excel parsing, bespoke 
 #### Why Typescript it's dumb why not Rust that's a safe language
 Well we're not going to actually *run* your TS class, so don't worry it'll be fine 😉
 
-#### How is this different than Google forms?
+#### How is this different from Google forms?
 1. Its open source
 2. Its way simpler
 3. Long term, we're hoping to have a bigger scope of what kinds of UIs you're not writing
@@ -85,7 +90,7 @@ Yes, oh mighty developer, you could just make a website.  Whatever you were doin
 🙄😩 personally, I'd rather not.
 
 #### But my website will be nicer.  My website will be a lot more than just a derpy Google Form.  My website will have a header, and a footer, and a settings page, and an about us page.  How can you compete with that?
-Ok, for sure a bespoke UI is nicer.  We are constantly thinking about how to make this tool provide a "serious" user experience. Today, this is not a lead-to-gold converter, its a lead-to-copper converter. One day you'll be able to show UIs built with this tool to customers and feel great about it.
+Ok, for sure a bespoke UI is nicer.  We're thinking about how to make this tool provide a "serious" user experience. Today, this is not a lead-to-gold converter, its a lead-to-copper converter. One day you'll be able to show UIs built with this tool to customers and feel great about it.
 
 Until that day, consider--do you really need a custom luxury experience?  Or will a bit of utilitarian swagger get you where you need to be?
 
