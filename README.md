@@ -17,20 +17,24 @@
 
 #### You write
 ```typescript
-import { AsyncForm } from 'rathernot/ui';
-import { AWSQueue, DeliveryLocation } from 'rathernot/delivery';
+import {
+  AsyncForm,
+  ShortString,
+  Choice
+} from 'rathernot/ui';
+import { AWSQueue, AsyncDelivery } from 'rathernot/delivery';
 
 class ProvisioningRequest() implements AsyncForm {
 
   //form fields
-  userName: string;
-  userCostCenter: string;
-  accountLifespan: "temporary_1M"|"temporary_1Y"|"permanent";
-  ownerEmail: string;
-  ownerPosixGroup: string;
+  userName: ShortString;
+  userCostCenter: ShortString;
+  accountLifespan: Choice("temporary_1M"|"temporary_1Y"|"permanent");
+  ownerEmail: ShortString;
+  ownerPosixGroup: ShortString;
 
   //where we deliver the instances
-  getDelivery ({stage}): DeliveryLocation {
+  getDelivery ({stage}): AsyncDelivery {
     const deliveryQueue = stage.isProduction()
       ? "aws.sqs.arn.production.amazone.com"
       : "aws.sqs.arn.beta.amazone.com"
