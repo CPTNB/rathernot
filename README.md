@@ -20,22 +20,24 @@
 import {
   AsyncForm,
   ShortString,
-  Choice
-} from 'rathernot/ui';
-import { AWSQueue, AsyncDelivery } from 'rathernot/delivery';
+  Choice,
+  RuntimeConfig,
+  FormFieldType
+} from '../../src/ui/index';
+import { AWSQueue, AsyncDelivery } from '../../src/delivery/index';
 
-class ProvisioningRequest() implements AsyncForm {
+class ProvisioningRequest implements AsyncForm {
 
   //form fields
-  userName: ShortString;
-  userCostCenter: ShortString;
-  accountLifespan: Choice("temporary_1M"|"temporary_1Y"|"permanent");
-  ownerEmail: ShortString;
-  ownerPosixGroup: ShortString;
+  userName = ShortString();
+  userCostCenter = ShortString();
+  accountLifespan = Choice(["temporary_1M", "temporary_1Y", "permanent"]);
+  ownerEmail = ShortString();
+  ownerPosixGroup = ShortString();
 
   //where we deliver the instances
-  getDelivery ({stage}): AsyncDelivery {
-    const deliveryQueue = stage.isProduction()
+  getDelivery (config: RuntimeConfig): AsyncDelivery {
+    const deliveryQueue = config.stage.isProduction()
       ? "aws.sqs.arn.production.amazone.com"
       : "aws.sqs.arn.beta.amazone.com"
     return new AWSQueue(deliveryQueue);
