@@ -1,9 +1,7 @@
 {
-  "modules": {
-    "baseUrl": "./"
-  },
   "compilerOptions": {
     "lib": ["es2021"],
+    "baseUrl": "./src",
     "strict": true,
     "esModuleInterop": true,
     "target": "es2021",

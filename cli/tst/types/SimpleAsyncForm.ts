@@ -3,14 +3,12 @@ import {
   ShortString,
   Choice,
   RuntimeConfig,
-  FormFieldType,
   getFormFields
-} from '../../src/ui/index';
-import { AWSQueue, AsyncDelivery } from '../../src/delivery/index';
+} from 'ui';
+import { AWSQueue, AsyncDelivery } from 'delivery';
 
 class ProvisioningRequest implements AsyncForm {
 
-  //form fields
   userName = ShortString();
   userCostCenter = ShortString();
   accountLifespan = Choice(["temporary_1M", "temporary_1Y", "permanent"]);
@@ -28,12 +26,15 @@ class ProvisioningRequest implements AsyncForm {
   }
 }
 
-console.log(`Making a form with fields:
-`)
-getFormFields(new ProvisioningRequest())
-  .map(([k, v]) => {
-    const options = v.getOptions()
-    console.log('\n')
-    console.log(`${k}, which is a ${options.formTypeName} with configuration:`)
-    console.log(options)
-  });
+describe('async form', () => {
+  it ('should parse form fields', () => {
+    const formFields = getFormFields(new ProvisioningRequest())
+    const fieldNames = formFields.map(f => f[0]);
+      expect(fieldNames).toEqual([
+        'userName',
+        'userCostCenter',
+        'accountLifespan',
+        'ownerEmail',
+        'ownerPosixGroup']);
+  })
+})

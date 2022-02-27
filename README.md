@@ -73,9 +73,6 @@ It kinda sounds like you'd rather make a UI.
 #### How can I get data from humans?
 Today, using a form a la Google forms.  Tomorrow: forms, excel parsing, bespoke UI plugins, who knows!  The number of UIs you won't have to write is endless!
 
-#### Why Typescript it's dumb why not Rust that's a safe language
-Well we're not going to actually *run* your TS class, so don't worry it'll be fine 😉
-
 #### How is this different from Google forms?
 1. Its open source
 2. Its way simpler
