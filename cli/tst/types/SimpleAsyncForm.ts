@@ -3,7 +3,8 @@ import {
   ShortString,
   Choice,
   RuntimeConfig,
-  FormFieldType
+  FormFieldType,
+  getFormFields
 } from '../../src/ui/index';
 import { AWSQueue, AsyncDelivery } from '../../src/delivery/index';
 
@@ -29,14 +30,10 @@ class ProvisioningRequest implements AsyncForm {
 
 console.log(`Making a form with fields:
 `)
-const x = new ProvisioningRequest()
-Object.keys(x)
-  .map((k: keyof typeof x) => {
-    if (x[k] instanceof FormFieldType) {
-      const v = x[k] as FormFieldType<any, any>
-      const options = v.getOptions()
-      console.log('\n')
-      console.log(`${k}, which is a ${options.formTypeName} with configuration:`)
-      console.log(options)
-    }
-  })
+getFormFields(new ProvisioningRequest())
+  .map(([k, v]) => {
+    const options = v.getOptions()
+    console.log('\n')
+    console.log(`${k}, which is a ${options.formTypeName} with configuration:`)
+    console.log(options)
+  });
