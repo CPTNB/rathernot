@@ -1,4 +1,4 @@
-import { FormFieldType, Validator } from 'ui/field-types';
+import { FormFieldType, Validator } from 'forms/field-types';
 
 type ShortStringOptions = { todo: string } | undefined
 const defaultShortStringOptions = {
@@ -6,14 +6,17 @@ const defaultShortStringOptions = {
 }
 
 class ShortStringValidator extends Validator<ShortStringOptions> {
-  constructor(options: ShortStringOptions) {
-    super({
-      ...(options || defaultShortStringOptions),
-      formTypeName: 'ShortString'
-    })}
+  constructor(private options: ShortStringOptions) { super() }
+
   validate(): boolean {
     //todo; move to different file
     return true;
+  }
+  getOptions() {
+    return {
+      ...this.options || defaultShortStringOptions,
+      formFieldType: 'ShortString'
+    }
   }
 }
 

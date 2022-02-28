@@ -17,14 +17,9 @@
 
 #### You write
 ```typescript
-import {
-  AsyncForm,
-  ShortString,
-  Choice,
-  RuntimeConfig,
-  FormFieldType
-} from '../../src/ui/index';
-import { AWSQueue, AsyncDelivery } from '../../src/delivery/index';
+import RatherNot from 'rathernot'
+import { ShortString, Choice } from 'rathernot/forms';
+import { SQSQueue, AsyncForm } from 'rathernot/delivery';
 
 class ProvisioningRequest implements AsyncForm {
 
@@ -36,13 +31,12 @@ class ProvisioningRequest implements AsyncForm {
   ownerPosixGroup = ShortString();
 
   //where we deliver the instances
-  getDelivery (config: RuntimeConfig): AsyncDelivery {
-    const deliveryQueue = config.stage.isProduction()
-      ? "aws.sqs.arn.production.amazone.com"
-      : "aws.sqs.arn.beta.amazone.com"
-    return new AWSQueue(deliveryQueue);
+  getDelivery () {
+    return new SQSQueue("aws.sqs.arn.production.amazone.com");
   }
 }
+
+export default RatherNot(new ProvisioningRequest());
 ```
 
 #### You ship

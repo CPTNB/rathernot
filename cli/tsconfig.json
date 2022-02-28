@@ -11,7 +11,8 @@
     "preserveConstEnums": true,
     "useUnknownInCatchVariables": true,
     "sourceMap": false,
-    "outDir": "dist"
+    "outDir": "dist",
+    "strictNullChecks": true
   },
   "include": ["src/**/*", "tst/**/*"],
   "exclude": ["node_modules"]

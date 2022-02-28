@@ -1,11 +1,9 @@
 import {
-  AsyncForm,
   ShortString,
   Choice,
-  RuntimeConfig,
   getFormFields
-} from 'ui';
-import { AWSQueue, AsyncDelivery } from 'delivery';
+} from 'forms';
+import { SQSQueue, AsyncDelivery, AsyncForm } from 'delivery';
 
 class ProvisioningRequest implements AsyncForm {
 
@@ -18,23 +16,8 @@ class ProvisioningRequest implements AsyncForm {
   redherring = "string"
 
   //where we deliver the instances
-  getDelivery (config: RuntimeConfig): AsyncDelivery {
-    const deliveryQueue = config.stage.isProduction()
-      ? "aws.sqs.arn.production.amazone.com"
-      : "aws.sqs.arn.beta.amazone.com"
-    return new AWSQueue(deliveryQueue);
-  }
+  public getDelivery = () =>
+    SQSQueue("arn:aws:sqs:us-west-2:772384015957:RN_test_queue")
 }
 
-describe('async form', () => {
-  it ('should parse form fields', () => {
-    const formFields = getFormFields(new ProvisioningRequest())
-    const fieldNames = formFields.map(f => f[0]);
-      expect(fieldNames).toEqual([
-        'userName',
-        'userCostCenter',
-        'accountLifespan',
-        'ownerEmail',
-        'ownerPosixGroup']);
-  })
-})
+export const provisioningRequest = new ProvisioningRequest();

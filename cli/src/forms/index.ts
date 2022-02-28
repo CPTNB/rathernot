@@ -8,7 +8,3 @@ export interface RuntimeConfig {
     isProduction: () => boolean
   }
 }
-
-export type AsyncForm = {
-  getDelivery(stageInputs: RuntimeConfig): AsyncDelivery
-}
