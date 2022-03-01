@@ -94,16 +94,15 @@ Until that day, consider--do you really need a custom luxury experience?  Or wil
 ### Does this actually work?
 **Absoutely not** (as of 2-20-22 [two days before twosday! {blessed}])
 
-
-
 ## 𝕔𝕠𝕠𝕝 𝕥𝕙𝕚𝕟𝕘𝕤 𝕥𝕙𝕚𝕤 𝕨𝕚𝕝𝕝 𝕕𝕠 𝕖𝕧𝕖𝕟𝕥𝕦𝕒𝕝𝕝𝕪 (𝕣𝕠𝕦𝕘𝕙 𝕡𝕣𝕚𝕠 𝕠𝕣𝕕𝕖𝕣)
 - work
+- persistent form responses with lifecycle events that you can write to
 - let users read data so you don't have to make a read UI either
-- let devs supply form validation code
 - put forms behind authX
+- integrate forms into existing UIs
+
 - synchronous delivery mechanisms (ex: a service call instead of a queue msg)
 - forms with data from service calls (ex: a dropdown with results from a service request)
-- persistent form responses with lifecycle events that you can write to
-- integrate forms into existing UIs
+- let devs supply form validation code
 - form themes / data type extensions / form plugins
 - excel file parsing--everybody loves excel!

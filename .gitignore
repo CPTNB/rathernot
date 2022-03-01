@@ -1,6 +1,8 @@
 # Javascript artifacts
 *.js
 
+cdk.out
+
 # Logs
 logs
 *.log

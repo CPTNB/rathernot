@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "lib": ["es2021"],
+    "baseUrl": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "target": "es2021",
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "useUnknownInCatchVariables": true,
+    "sourceMap": false,
+    "outDir": "dist",
+    "strictNullChecks": true
+  },
+  "include": ["src/**/*", "infra/**/*", "tst/**/*"],
+  "exclude": ["node_modules"]
+}
