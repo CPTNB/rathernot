@@ -11,6 +11,13 @@ server.get('/health', async (request, reply) => {
   return 'ok\n'
 });
 
+server.get('*', async (request, reply) => {
+  return JSON.stringify({
+    headers: request.headers,
+    url: request.url
+  }, null, 2);
+});
+
 server.listen(3000, "0.0.0.0", (err, address) => {
   if (err) {
     console.error(err)
@@ -23,7 +30,7 @@ server.listen(3000, "0.0.0.0", (err, address) => {
 
 async function closeGracefully(signal: any) {
    console.log(`*^!@4=> Received signal to terminate: ${signal}`)
- 
+
    await server.close()
    // await db.close() if we have a db connection in this app
    // await other things we should cleanup nicely
