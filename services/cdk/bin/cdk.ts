@@ -28,5 +28,5 @@ const requestRewriter = new RequestRewriterStack(app, 'Rathernot-Frontend', {
   env: { account: '772384015957', region: 'us-east-1' }
 })
 rathernot.createFrontendResources(taskRole);
-requestRewriter.createRequestRewriter('rather-not-client-assets', "rather-not-client-assets.s3.us-west-2.amazonaws.com");
+requestRewriter.createRequestRewriter('rather-not-client-assets', "rather-not-client-assets.s3-us-west-2.amazonaws.com");
 

@@ -31,12 +31,12 @@ export class RequestRewriterStack extends Stack {
     const distribution = new Distribution(this, 'rathernot-ui-distribution', {
       defaultBehavior: {
         origin: new S3Origin(bucket),
-        edgeLambdas: [
-          {
-            functionVersion: requestRewriter.currentVersion,
-            eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
-          }
-        ],
+        // edgeLambdas: [
+        //   {
+        //     functionVersion: requestRewriter.currentVersion,
+        //     eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+        //   }
+        // ],
       },
     });
   }
@@ -50,16 +50,16 @@ const s3Bucket = '${bucketUrl}';
 exports.handler = (event, context, callback) => {
 const request = event.Records[0].cf.request;
 const headers = request.headers;
-const hostname = headers.host[0].value;
+const hostname = "" + headers.host[0].value;
 const tldloc = hostname.indexOf(rathernot) - 1;
+headers.host[0].value = s3Bucket;
 var i = tldloc;
 var origin;
 if (tldloc > -1) {
   while(i > 0 && hostname.charAt(i) !== '.') {
     i--;
   }
-  origin = hostname.slice(0, i) + s3Bucket + '/' + hostname.slice(i, tldloc + 1) + request.uri
-  headers.host[0].value = origin;
+  request.uri = '/' + hostname.slice(i, tldloc + 1) + request.uri
 }
 return callback(null,request);
 };`

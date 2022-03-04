@@ -1,17 +1,16 @@
 # 𝕣𝕒𝕥𝕙𝕖𝕣𝕟𝕠𝕥
-[Hosted version - rathernot.io](https://rathernot.io)
+[Hosted version - rathernot.website](https://rathernot.website)
 ## 𝕡𝕣𝕠𝕓𝕝𝕖𝕞
-- You have a backend process
-- You need data from a human
+- You have a backend process and you need data from a human
   - to get that data you need a UI, probably a website
   - but making a UI, especially a website, means doing a bunch of crap you don't care about
 
 ## 𝕤𝕠𝕝𝕦𝕥𝕚𝕠𝕟
 - Since you'd **rather not** make a UI:
-  - you're gonna make a TS class representing the data you want and give it to us
-  - we're gonna take that class, make a form users can fill out to make an instance of that class, then drop the instances onto a queue you own.
+  - you'll make a TS class representing the data you want and give it to us
+  - we'll take that class, make a form users can fill out to make an instance of that class, then drop the instances onto a queue or webhook you own.
 
-**You give us a class and we give you data from users.**  Sleep well knowing you've dodged webpack for another day.
+**You give us a class and we give you data from users.**  Sleep well knowing you've dodged webpack another day.
 
 ## 𝕕𝕖𝕞𝕠 *(aspirational)*
 
@@ -32,7 +31,7 @@ class ProvisioningRequest implements AsyncForm {
 
   //where we deliver the instances
   getDelivery () {
-    return new SQSQueue("aws.sqs.arn.production.amazone.com");
+    return new SQSQueue("aws.sqs.arn.account-provisioning-requests.aws.com");
   }
 }
 
@@ -57,20 +56,34 @@ Messages like this dropped on a queue near you
 ```
 
 ## 𝕗𝕒𝕢
-#### Is this "No Code"?
-Nah dawg you're writing a class.  It's *only* code.  Our Dev CX is a CLI.  This project is for back-end software teams.
+#### Is this...
 
-#### Can I customize my forms experience?
-Eventually maybe 🤷‍♀️
-It kinda sounds like you'd rather make a UI.
+##### a form builder like Google Forms/Forms.io?
+Nope--those tools target non-technical users and generally provide software that is less permanent and maintainable than what rathernot provides.
 
-#### How can I get data from humans?
-Today, using a form a la Google forms.  Tomorrow: forms, excel parsing, bespoke UI plugins, who knows!  The number of UIs you won't have to write is endless!
+##### a CMS?
+Again, the target user is software engineers that *would make a website front-end for their software but use rathernot instead*.  Imagine your generic software tool, now drop the front-end and replace it with a long-lived rathernot built UI. 
 
-#### How is this different from Google forms?
-1. Its open source
-2. Its way simpler
-3. Long term, we're hoping to have a bigger scope of what kinds of UIs you're not writing
+##### "no code"/"low code"?
+Nah dawg you're writing a class.  It's *only* code.  That means it can be developed, versioned, deployed, and extended in the normal codely ways.
+
+#### Can I customize my UI experience?
+Users can have any ui theme they like, as long as its rathernot's default theme.  Long term, we think the theme experience will look something like:
+
+```
+import { Dark } from 'rathernot/themes/material'
+Rathernot(Dark)
+...
+```
+
+#### I already have a website.  This product isn't for me.
+Slow down!  You can weave rathernot uis into your broader website strategy.  Folding in a small rathernot ui works great for:
+- internal control plane uis
+- lightweight proof-of-concepts
+- non-critical-path features (ex: account management, abuse reporting forms, moderation actions)
+- partially automated systems that need human intervention in exceptional cases
+- stopgap heroics
+- projects staffed by developers inexperienced in web development
 
 #### But like I could still just make a website.  Nobody ever got fired for making a website.  Why bother with this new thing?
 Yes, oh mighty developer, you could just make a website.  Whatever you were doing before you realized you needed a UI is surely not that important so absolutely, drop everything and:
@@ -87,22 +100,27 @@ Yes, oh mighty developer, you could just make a website.  Whatever you were doin
 🙄😩 personally, I'd rather not.
 
 #### But my website will be nicer.  My website will be a lot more than just a derpy Google Form.  My website will have a header, and a footer, and a settings page, and an about us page.  How can you compete with that?
-Ok, for sure a bespoke UI is nicer.  We're thinking about how to make this tool provide a "serious" user experience. Today, this is not a lead-to-gold converter, its a lead-to-copper converter. One day you'll be able to show UIs built with this tool to customers and feel great about it.
+Ok, for sure a bespoke UI is nicer.  We're thinking about how to make this tool provide a "serious" user experience. Today, this is not a lead-to-gold converter, its a lead-to-copper converter. One day you'll be able to show UIs built with this tool to users and feel great about it.
 
 Until that day, consider--do you really need a custom luxury experience?  Or will a bit of utilitarian swagger get you where you need to be?
+
+### Why do you hate websites so much
+Look, web development is complex, expensive, and slow.  If having a great website is in your critical path to success, then sure, party on.  But does an internal automation application that sees 5 users a week need a nextjs SSR lambo-site?
+
+One way to deal with web development complexity might be to design better/simpler tools.  The best way to deal with web development complexity is to not do it at all!
 
 ### Does this actually work?
 **Absoutely not** (as of 2-20-22 [two days before twosday! {blessed}])
 
 ## 𝕔𝕠𝕠𝕝 𝕥𝕙𝕚𝕟𝕘𝕤 𝕥𝕙𝕚𝕤 𝕨𝕚𝕝𝕝 𝕕𝕠 𝕖𝕧𝕖𝕟𝕥𝕦𝕒𝕝𝕝𝕪 (𝕣𝕠𝕦𝕘𝕙 𝕡𝕣𝕚𝕠 𝕠𝕣𝕕𝕖𝕣)
-- work
 - persistent form responses with lifecycle events that you can write to
-- let users read data so you don't have to make a read UI either
+- hook up some kind of graphql thing that queries data from persistent forms
 - put forms behind authX
 - integrate forms into existing UIs
+- Webhooks so people don't have to pay AMZN.  Even though SQS is fantastic.
+^ MVP
 
-- synchronous delivery mechanisms (ex: a service call instead of a queue msg)
 - forms with data from service calls (ex: a dropdown with results from a service request)
-- let devs supply form validation code
+- excel file parsing & generation--everybody loves excel!  Have you ever seen the joy of a user's face when you tell them they can just upload their excel spreadsheet?  That they don't have to learn how to use your webapp?
+- meet users where they are- google/azure/on-prem-container?
 - form themes / data type extensions / form plugins
-- excel file parsing--everybody loves excel!
