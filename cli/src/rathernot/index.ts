@@ -1,9 +1,9 @@
 import {
   getFormFields
-} from 'forms';
+} from '../forms';
 import {
   AsyncForm
-} from 'delivery';
+} from '../delivery';
 
 export type RatherNotUIDescriptor = AsyncForm
 

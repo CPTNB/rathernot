@@ -1,5 +1,5 @@
 import { AtLeastTwo } from '../../../common/types';
-import { FormFieldType, Validator } from 'forms/field-types';
+import { FormFieldType, Validator } from './field-types';
 
 type EligibleChoiceTypes = string | number | boolean
 type ChoiceOptions = { todo: string } | AtLeastTwo<EligibleChoiceTypes>

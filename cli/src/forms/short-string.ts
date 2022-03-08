@@ -1,4 +1,4 @@
-import { FormFieldType, Validator } from 'forms/field-types';
+import { FormFieldType, Validator } from './field-types';
 
 type ShortStringOptions = { todo: string } | undefined
 const defaultShortStringOptions = {

@@ -2,8 +2,8 @@ import {
   ShortString,
   Choice,
   getFormFields
-} from 'forms';
-import { SQSQueue, AsyncDelivery, AsyncForm } from 'delivery';
+} from '../../src/forms/index';
+import { SQSQueue, AsyncDelivery, AsyncForm } from '../../src/delivery/index';
 
 class ProvisioningRequest implements AsyncForm {
 
@@ -11,7 +11,7 @@ class ProvisioningRequest implements AsyncForm {
   userCostCenter = ShortString();
   accountLifespan = Choice(["temporary_1M", "temporary_1Y", "permanent"]);
   ownerEmail = ShortString();
-  ownerPosixGroup = ShortString();
+  // ownerPosixGroup = ShortString();
 
   redherring = "string"
 

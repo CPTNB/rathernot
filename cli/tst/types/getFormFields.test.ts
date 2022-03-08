@@ -1,6 +1,6 @@
 import {
   getFormFields
-} from 'forms';
+} from '../../src/forms';
 import { provisioningRequest } from './SimpleAsyncForm';
 
 describe('async form', () => {

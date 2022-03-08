@@ -1,10 +1,12 @@
 import fastify from 'fastify'
-// this just builds the right dist structure
-import { Discernable } from '../../common/types' 
+import { UserApplication } from './test';
+import { renderApplication } from './app'
+import * as theJuice from './the-juice.json';
+import fastifyStatic from 'fastify-static';
 const server = fastify()
 
-server.get('/ping', async (request, reply) => {
-  return 'pong\n'
+server.register(fastifyStatic, {
+  root: __dirname
 });
 
 server.get('/health', async (request, reply) => {
@@ -12,14 +14,10 @@ server.get('/health', async (request, reply) => {
 });
 
 server.get('/', async (request, reply) => {
-  return [...Array(5000).keys()].map(_ => '👩‍💻👷‍♀️🚧').join('')
-});
-
-server.get('*', async (request, reply) => {
-  return JSON.stringify({
-    headers: request.headers,
-    url: request.url
-  }, null, 2);
+  reply
+    .code(200)
+    .header('Content-Type', 'text/html; charset=utf-8')
+    .send(renderApplication(theJuice as unknown as UserApplication))
 });
 
 server.listen(3000, "0.0.0.0", (err, address) => {
@@ -43,4 +41,3 @@ async function closeGracefully(signal: any) {
 // process.on('SIGHUP', closeGracefully)
 process.on('SIGINT', closeGracefully)
 process.on('SIGTERM', closeGracefully)
-

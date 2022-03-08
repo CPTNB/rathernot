@@ -1,4 +1,4 @@
-import RatherNot from 'rathernot';
+import RatherNot from '../../src/rathernot';
 import { provisioningRequest } from './SimpleAsyncForm';
 
 describe('rathernot', () => {
