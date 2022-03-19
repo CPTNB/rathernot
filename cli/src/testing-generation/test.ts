@@ -4,6 +4,7 @@ import { provisioningRequest } from '../../tst/types/SimpleAsyncForm';
 import * as path from 'path';
 import { copyFile, writeFile, mkdir } from 'fs/promises';
 import webpack from 'webpack';
+import { spawn } from 'child_process';
 //@ts-ignore
 import { getPackin } from './adventures-in-webpack';
 
@@ -75,12 +76,33 @@ export function parseFields (name: string, forms: object[]): UserApplication {
 class TestCase {
   public MyString = ShortString();
   public MyChoice = Choice(["one", "two", "three"]);
+  public AnotherChoice = Choice(["an", "illusion"]);
 }
 
-const packs = getPackin(parseFields('Test case', [new TestCase()]));
+const app = parseFields('Test case', [new TestCase()])
+
+const packs = getPackin(app);
 webpack(packs, (err: any, stats: any) => {
-  process.stdout.write(stats.toString() + '\n');
   if (err) {
     process.stderr.write(err);  
+  } else {
+    console.log(`successfully built ${app.name}`)
+    dockerBuildNRun(app.name.toLowerCase().replace(' ', '_'));
   }
-})
+});
+
+function dockerBuildNRun(name: string) {
+  const dockerBuild = spawn('docker', ['build', '-t', name, 'dist']);
+  // dockerBuild.stdout.on('data', l => console.log(l.toString()));
+  dockerBuild.stderr.on('data', l => console.error(l.toString()));
+
+  dockerBuild.on('close', (code) => {
+    if (code != 0) {
+      console.error(`docker build failed with code: ${code}`);
+    } else {
+      const dockerRun = spawn('docker', ['run', '-p', '3000:3000', name]);
+      dockerRun.stdout.on('data', l => console.log(l.toString()));
+      dockerRun.stderr.on('data', l => console.error(l.toString()));
+    }
+  });
+}

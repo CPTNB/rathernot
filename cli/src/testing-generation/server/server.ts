@@ -58,7 +58,7 @@ server.listen(3000, "0.0.0.0", (err, address) => {
 // docker stuff
 
 async function closeGracefully(signal: any) {
-   console.log(`*^!@4=> Received signal to terminate: ${signal}`)
+   // console.log(`*^!@4=> Received signal to terminate: ${signal}`)
 
    await server.close()
    // await db.close() if we have a db connection in this app

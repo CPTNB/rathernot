@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@types/node": "^17.0.21",
+    "copy-webpack-plugin": "^10.2.4",
     "fastify": "^3.27.3",
     "fastify-static": "^4.5.0",
     "react": "^17.0.2",
