@@ -1,13 +1,11 @@
 import { AsyncForm, AsyncDelivery } from '../delivery/index'
 import { getFieldsOfType } from '../../../common/types'
-import { renderApplication } from './app'
 import { provisioningRequest } from '../../tst/types/SimpleAsyncForm';
-// import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import { copyFile, writeFile, mkdir } from 'fs/promises';
-// function getFormFields<T extends object>(input: T): [ keyof T, FormField ][] {
-//   return getFieldsOfType<FormField, T>(input, FORM_FIELD_DESCRIMINATOR)
-// }
+import webpack from 'webpack';
+//@ts-ignore
+import { getPackin } from './adventures-in-webpack';
 
 function getFieldsOf<Output>(input: any, discriminatingField: string): [string, Output][] {
   const keys = Object.keys(input);
@@ -22,43 +20,67 @@ function getFieldsOf<Output>(input: any, discriminatingField: string): [string, 
   }).map(k => [k, input[k] as unknown as Output])
 }
 
-
-// these aren't actually getting used lol
-type Choice = {
+type ChoiceFormField = {
   _formField_Type: "choice",
   choices: string[]
 }
 
-type ShortString = {
+function Choice (options?: string[]): ChoiceFormField {
+  return {
+    _formField_Type: "choice",
+    choices: options || []
+  }
+}
+
+type ShortStringFormField = {
   _formField_Type: "shortString"
 }
 
-export type FormField = Choice|ShortString
-const getFormFields = (input: object) => getFieldsOf<FormField>(input, 'descriminator');
-
-export type UserApplication = {
-  title: string,
-  fields: {[key:string]: FormField},
-  delivery: AsyncDelivery
+function ShortString (): ShortStringFormField {
+  return {
+    _formField_Type: "shortString"
+  }
 }
 
-export function parseFields (form: AsyncForm): UserApplication {
-  const fields = getFormFields(form);
+export type FormField =
+  ChoiceFormField
+  | ShortStringFormField
+const getFormFields = (input: object) =>
+  getFieldsOf<FormField>(input, '_formField_Type');
+
+type Form = {
+  fields: {[key:string]: FormField}
+  // delivery: AsyncDelivery
+}
+
+export type UserApplication = {
+  name: string,
+  forms: {[key:string]: Form}
+}
+
+export function parseFields (name: string, forms: object[]): UserApplication {
+  const fields = getFormFields(forms[0]);
   return {
-    title: 'foo',
-    fields: fields.reduce((fieldMap, nextField) =>
-      Object.assign(fieldMap, {[nextField[0]]: nextField[1]}), {}),
-    delivery: form.getDelivery()
+    name: name,
+    forms: {
+      [forms[0].constructor.name]: {
+        fields: fields.reduce((fieldMap, nextField) =>
+      Object.assign(fieldMap, {[nextField[0]]: nextField[1]}), {})
+      }
+    },
+    // delivery: form.getDelivery()
   };
 }
 
-async function doTheThing (form: AsyncForm) {
-  const ui = parseFields(form)
-  const destDir = path.resolve(__dirname, 'output')
-  const output = await mkdir(destDir, { recursive: true })
-  await copyFile('createServer.js', path.resolve(destDir, 'server.js'))
-  await copyFile('app.js', path.resolve(destDir, 'app.js'))
-  await writeFile(path.resolve(destDir, 'the-juice.json'), JSON.stringify(ui, null, 2));
+class TestCase {
+  public MyString = ShortString();
+  public MyChoice = Choice(["one", "two", "three"]);
 }
 
-doTheThing(provisioningRequest)
+const packs = getPackin(parseFields('Test case', [new TestCase()]));
+webpack(packs, (err: any, stats: any) => {
+  process.stdout.write(stats.toString() + '\n');
+  if (err) {
+    process.stderr.write(err);  
+  }
+})

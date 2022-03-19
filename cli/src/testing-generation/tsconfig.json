@@ -6,14 +6,15 @@
     "esModuleInterop": true,
     "target": "es2019",
     "module": "commonjs",
+    "moduleResolution": "node",
     "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
     "useUnknownInCatchVariables": true,
     "sourceMap": false,
-    "outDir": "dist",
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "skipLibCheck": true
   },
-  "include": ["src/**/*", "tst/**/*"],
+  "include": ["test.ts", "server/server.ts"],
   "exclude": ["node_modules"]
 }
