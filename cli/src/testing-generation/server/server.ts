@@ -1,7 +1,7 @@
 import fastify from 'fastify'
 import fastifyStatic from 'fastify-static';
 import * as path from 'path';
-import { UserApplication } from '../test';
+import { UserApplication } from '../../../../common/application';
 //@ts-ignore
 import * as thejuice from './thejuice';
 const UI: UserApplication = thejuice;

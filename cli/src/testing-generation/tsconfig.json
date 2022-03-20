@@ -4,7 +4,7 @@
     "strict": true,
     "jsx": "react",
     "esModuleInterop": true,
-    "target": "es2019",
+    "target": "es2021",
     "module": "commonjs",
     "moduleResolution": "node",
     "noImplicitAny": true,

@@ -8,9 +8,13 @@
   },
   "dependencies": {
     "@types/node": "^17.0.21",
+    "chalk": "<5.0.0",
+    "cli-spinner": "^0.2.10",
     "copy-webpack-plugin": "^10.2.4",
     "fastify": "^3.27.3",
     "fastify-static": "^4.5.0",
+    "fork-ts-checker-notifier-webpack-plugin": "^6.0.0",
+    "fork-ts-checker-webpack-plugin": "^7.2.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "ts-adt": "^2.1.2",

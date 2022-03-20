@@ -1,11 +1,13 @@
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 const CopyPlugin = require("copy-webpack-plugin");
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+// const ForkTsCheckerNotifierWebpackPlugin = require('fork-ts-checker-notifier-webpack-plugin');
 
 const ts = {
   test: /\.tsx?$/,
   use: [
-    { loader: 'ts-loader', options: {  } }
+    { loader: 'ts-loader', options: { transpileOnly: true }}
   ],
   exclude: /node_modules/,
 }
@@ -28,6 +30,12 @@ module.exports.getPackin = function getPackin(UI, outDir) {
       react: 'React',
       "react-dom": 'ReactDOM'
     },
+    plugins: [
+      new ForkTsCheckerWebpackPlugin({
+        async: false,
+      }),
+      // new ForkTsCheckerNotifierWebpackPlugin({ title: 'TypeScript', excludeWarnings: false })
+    ],
     output: {
       filename: 'client.js',
       path: path.resolve(outDir, 'client')
@@ -54,11 +62,17 @@ module.exports.getPackin = function getPackin(UI, outDir) {
     externalsPresets: {
         node: true
     },
-    plugins: [new CopyPlugin({
-      patterns: [
-        { from: path.resolve(__dirname, "Dockerfile") },
-      ],
-    })],
+    plugins: [
+      new CopyPlugin({
+        patterns: [
+          { from: path.resolve(__dirname, "Dockerfile") },
+        ],
+      }),
+      new ForkTsCheckerWebpackPlugin({
+        async: false,
+      }),
+      // new ForkTsCheckerNotifierWebpackPlugin({ title: 'TypeScript', excludeWarnings: false })
+    ],
     output: {
       filename: 'server.js',
       path: path.resolve(outDir)
@@ -88,6 +102,12 @@ module.exports.packUserSpace = function packUserSpace (absolutePathToUserSpace, 
     externalsPresets: {
         node: true
     },
+    plugins: [
+      new ForkTsCheckerWebpackPlugin({
+        async: false,
+      }),
+      // new ForkTsCheckerNotifierWebpackPlugin({ title: 'TypeScript', excludeWarnings: false })
+    ],
     output: {
       filename: 'userspace.js',
       path: path.resolve(outDir),

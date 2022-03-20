@@ -5,31 +5,59 @@ import {
 import webpack from 'webpack';
 import { spawn } from 'child_process';
 //@ts-ignore
-import { getPackin, packUserSpace } from './adventures-in-webpack';
-import { mkdtempSync } from 'fs';
+import { getPackin, packUserSpace } from './adventures-in-webpack.js';
+import { mkdtemp} from 'fs/promises';
 import { resolve } from "path";
 import { tmpdir } from 'os';
+import chalk from 'chalk';
+//@ts-ignore
+import * as cliSpinner from 'cli-spinner';
+const Spinner = cliSpinner.Spinner;
 
+//todo: use monads or something
+//todo: parse args
+//todo: help
 async function cli () {
-  const args = parseArgs();
-  const workingDir =  mkdtempSync(resolve(tmpdir(), 'rnc'));
-  console.log(`✔ ${workingDir}`)
-  await tsCompile(args, workingDir);
-  console.log('✔ ts compile')
-  const UI = await parse(workingDir);
-  console.log('✔ parse')
-  const dockerName = UI.name.toLowerCase().replace(' ', '_')
-  await pack(getPackin(UI, workingDir));
-  console.log(`✔ pack`)
-  await build(dockerName, workingDir);
-  console.log(`✔ docker build image ${dockerName}`);
-  await run(dockerName);
+  try {
+    const args = parseArgs();
+    const workingDir =  await spinOn(mkdtemp(resolve(tmpdir(), 'rnc')), 'creating temp dir');
+    console.log(chalk.green(` ➡ ${workingDir}`));
+    await spinOn(tsCompile(args, workingDir), 'compiling user typescript');
+    const UI = await spinOn(parse(workingDir), 'parsing user files');
+    const dockerName = UI.name.toLowerCase().replace(' ', '_')
+    await spinOn(pack(getPackin(UI, workingDir)), 'packing runtime');
+    await spinOn(build(dockerName, workingDir), `building docker image '${dockerName}'`);
+    console.log('running docker');
+    await run(dockerName);
+  } catch (e) {
+    //todo: do better
+    console.error('');
+    console.error(e);
+    process.exit(1);
+  }
+}
+
+async function spinOn<T> (work: Promise<T>, message: string): Promise<T> {
+  var spinner = new Spinner('%s ' + message);
+  spinner.setSpinnerString("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏");
+  spinner.start();
+  try {
+    const r = await work
+    spinner.stop(true);
+    console.log(chalk.green(`✔ ${message}`));
+    return r;
+  } catch (e) {
+    spinner.stop(true);
+    console.log(chalk.red(`✖ ${message}`));
+    throw e;
+  }
 }
 
 function parseArgs () {
   return resolve(__dirname, process.argv[2]);
 }
 
+//todo: this is broken and doesn't actually blow up on type errors
 async function tsCompile(absolutePathEntry: string, dir: string): Promise<any> {
   //todo: let users provide tsconfig
   return pack([packUserSpace(absolutePathEntry, dir)]).then(stats => stats)
@@ -48,10 +76,15 @@ async function pack (packs: any[]) {
       if (err) {
         reject(err)
       } else {
-        resolve(stats)
+        const st = stats.toJson('errors-warnings');
+        if (st.errors.length > 0) {
+          reject(stats.toString())
+        } else {
+          resolve([])
+        }
       }
     });
-  });
+  })
 }
 
 async function build (name: string, dir: string) {
