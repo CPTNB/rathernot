@@ -17,11 +17,11 @@ const resolveTs = {
 const dev = {
   mode: "development"
 }
-const outPath = { path: path.resolve(__dirname, './dist') }
+// const outPath = { path: path.resolve(__dirname, './dist') }
 
-module.exports.getPackin = function getPackin(UI) {
+module.exports.getPackin = function getPackin(UI, outDir) {
   const client = {
-    entry: './client/app.tsx',
+    entry: './client/App.tsx',
     module: { rules: [ts] },
     ...resolveTs,
     ...dev,
@@ -31,7 +31,7 @@ module.exports.getPackin = function getPackin(UI) {
     },
     output: {
       filename: 'client.js',
-      path: path.resolve(__dirname, 'dist', 'client')
+      path: path.resolve(outDir, 'client')
     }
   }
   const server = {
@@ -62,7 +62,7 @@ module.exports.getPackin = function getPackin(UI) {
     })],
     output: {
       filename: 'server.js',
-      path: path.resolve(__dirname, 'dist')
+      path: path.resolve(outDir)
     },
   }
   return [client, server]

@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as ReactDOM from 'react-dom'
-import { UserApplication } from '../test';
+import { UserApplication } from '../../../../common/application';
 import { Form } from './Form';
 
 declare const UI: UserApplication

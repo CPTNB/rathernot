@@ -21,3 +21,16 @@ export function getFieldsOfType
     }
   }).map(k => [k, input[k] as unknown as Type])
 }
+
+export function getFieldsOf<Output>(input: any, discriminatingField: string): [string, Output][] {
+  const keys = Object.keys(input);
+  return keys.filter(k => {
+    if (typeof input !== 'object') {
+      return false;
+    }
+    const value: any = input[k];
+    if (value && typeof value[discriminatingField] === 'string') {
+      return true
+    }
+  }).map(k => [k, input[k] as unknown as Output])
+}
