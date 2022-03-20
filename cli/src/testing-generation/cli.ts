@@ -4,42 +4,51 @@ import {
 } from '../../../common/application'
 import webpack from 'webpack';
 import { spawn } from 'child_process';
-import TestCase from './TestCase';
 //@ts-ignore
-import { getPackin } from './adventures-in-webpack';
+import { getPackin, packUserSpace } from './adventures-in-webpack';
 import { mkdtempSync } from 'fs';
 import { resolve } from "path";
 import { tmpdir } from 'os';
 
-// get the CLI input
-
 async function cli () {
+  const args = parseArgs();
   const workingDir =  mkdtempSync(resolve(tmpdir(), 'rnc'));
   console.log(`✔ ${workingDir}`)
-  const UI = await parse(TestCase, workingDir);
-  console.log("✔ parse")
+  await tsCompile(args, workingDir);
+  console.log('✔ ts compile')
+  const UI = await parse(workingDir);
+  console.log('✔ parse')
   const dockerName = UI.name.toLowerCase().replace(' ', '_')
-  await pack(UI, workingDir);
+  await pack(getPackin(UI, workingDir));
   console.log(`✔ pack`)
   await build(dockerName, workingDir);
   console.log(`✔ docker build image ${dockerName}`);
   await run(dockerName);
 }
 
-async function parse (app: object, dir: string): Promise<UserApplication> {
-  //todo: compile the input into the tmpdir
-  return parseForms(app.constructor.name, [app]);
+function parseArgs () {
+  return resolve(__dirname, process.argv[2]);
 }
 
-async function pack (UI: UserApplication, dir: string) {
+async function tsCompile(absolutePathEntry: string, dir: string): Promise<any> {
+  //todo: let users provide tsconfig
+  return pack([packUserSpace(absolutePathEntry, dir)]).then(stats => stats)
+}
+
+async function parse (dir: string): Promise<UserApplication> {
+  // todo: load up the ts ast and do smart things
+  const userSpace = require(resolve(dir, 'userspace.js')).default
+  //todo: really think about this lol
+  return parseForms(userSpace.constructor.name, [userSpace]);
+}
+
+async function pack (packs: any[]) {
   return new Promise(function (resolve, reject) {
-    webpack(getPackin(UI, dir), (err: any, stats: any) => {
+    webpack(packs, (err: any, stats: any) => {
       if (err) {
         reject(err)
       } else {
         resolve(stats)
-        // console.log(`successfully built ${app.name}`)
-        // dockerBuildNRun(app.name.toLowerCase().replace(' ', '_'));
       }
     });
   });

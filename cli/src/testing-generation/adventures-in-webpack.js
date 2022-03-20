@@ -17,7 +17,6 @@ const resolveTs = {
 const dev = {
   mode: "development"
 }
-// const outPath = { path: path.resolve(__dirname, './dist') }
 
 module.exports.getPackin = function getPackin(UI, outDir) {
   const client = {
@@ -66,4 +65,34 @@ module.exports.getPackin = function getPackin(UI, outDir) {
     },
   }
   return [client, server]
+}
+
+module.exports.packUserSpace = function packUserSpace (absolutePathToUserSpace, outDir) {
+  return {
+    entry: absolutePathToUserSpace,
+    module: {
+      rules: [
+        ts
+      ]
+    },
+    ...resolveTs,
+    ...dev,
+    target: 'node',
+    externals: [
+      {
+        ...nodeExternals(),
+        react: 'React',
+        "react-dom": 'ReactDOM'
+      }
+    ],
+    externalsPresets: {
+        node: true
+    },
+    output: {
+      filename: 'userspace.js',
+      path: path.resolve(outDir),
+      libraryTarget: 'commonjs',
+      chunkFormat: 'commonjs'
+    },
+  }
 }
