@@ -1,4 +1,7 @@
 import { getFieldsOf } from './types'
+//@ts-ignore
+const { get } = require('/home/ec2-user/rn/cli/node_modules/stack-trace');
+import Registry, { RegistryState } from './registry';
 
 type ChoiceFormField = {
   _formField_Type: "choice",
@@ -50,4 +53,42 @@ export function parseForms (name: string, forms: object[]): UserApplication {
       }
     },
   };
+}
+
+type AppForm<FormType> = FormType & {
+  _rn_node_type: 'form'
+}
+
+type UserForm = {
+  onSubmit: (instance: object) => void
+}
+
+export function Form<FormType extends UserForm>(service: FormType): AppForm<FormType> {
+  return {
+    ...service,
+    _rn_node_type: 'form'
+  }
+}
+
+type FirstWhenSecondExists<K, V> = V extends never ? never : K
+
+//todo: restrict this to just async functions
+type OnlyFunctionsOf<T> = {
+  [Property in keyof T as
+    FirstWhenSecondExists<Property, Extract<T[Property], Function>>]:
+      T[Property]
+}
+
+type RuntimeService = object
+type Location = 'webserver'|'client';
+
+export type ServiceReturnType<Input> = OnlyFunctionsOf<Input>;
+
+export type TheJuice = {
+  registry: RegistryState
+}
+
+export function Service<Input extends object>(input: Input): ServiceReturnType<Input> {
+  const callingFile = get()[1].getFileName();
+  return Registry.addService(input, callingFile);
 }
