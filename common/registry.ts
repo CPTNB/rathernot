@@ -22,9 +22,35 @@ export type RegistryState = {
   [key: string]: RegistryNode//something
 }
 
-class Registry {
+const notFunctions = new Set([
+  'constructor',
+  '__defineGetter__',
+  '__defineSetter__',
+  'hasOwnProperty',
+  '__lookupGetter__',
+  '__lookupSetter__',
+  'isPrototypeOf',
+  'propertyIsEnumerable',
+  'toString',
+  'valueOf',
+  'toLocaleString'
+]);
+//probably restrict this somehow
+function getAllFunctions(input: any) {
+  const props = [];
+  let obj = input;
+  do {
+    props.push(...Object.getOwnPropertyNames(obj));
+  } while (obj = Object.getPrototypeOf(obj));
+  
+  return Array.from(new Set(props))
+    .filter(e => typeof input[e] === 'function')
+    .filter(e => !notFunctions.has(e))
+}
+
+export class Registry {
   private state: RegistryState;
-  constructor(private mode: "build"|"client"|"server" , state: RegistryState = {}){
+  constructor(private mode: "build"|"client"|"server" , private originStack: any, state: RegistryState = {}){
     this.state = state
   }
 
@@ -39,7 +65,6 @@ class Registry {
     const node = this.toNode(desiredServiceName, input, callingFilename);
     this.state[desiredServiceName] = node;
 
-
     // map the node back to a callable object
     return Object.values(node.functions)
       .reduce((ret, nodeRecord) =>
@@ -49,16 +74,15 @@ class Registry {
   }
 
   toNode(service: string, obj: object, callingFilename: string): RegistryNode {
-    const functions =  Object.entries(obj)
-      .filter(([key, value]) => typeof value === 'function')
-      .reduce((agg, [key, value]) => {
+    const functions = getAllFunctions(obj)
+      .reduce((agg, prop) => {
         let fn;
         switch (this.mode) {
           case 'build':
             fn = () => Promise.reject(new Error("don't call service functions at build time"))
             break;
           case 'client':
-            fn = (...args: any) => fetch(`api/${service}/${key}`, {
+            fn = (...args: any) => fetch(`api/${service}/${prop}`, {
               // todo: gets? (would need some TS splitting)
               method: "POST",
               headers: [['Content-Type', 'application/json']],
@@ -67,13 +91,13 @@ class Registry {
             break;
           case 'server':
             // todo: indirection
-            fn = (...args: any) => (obj as any)[key](...args);
+            fn = (...args: any) => (obj as any)[prop](...args);
             break;
         }
         return Object.assign(agg, {
-          [key]: {
+          [prop]: {
             service: service,
-            fnName: key,
+            fnName: prop,
             fn: fn
           }
         });
@@ -98,6 +122,7 @@ class Registry {
   }
 
   getState(): RegistryState {
+    // console.log(this.originStack);
     return this.state;
   }
 }
@@ -109,13 +134,12 @@ declare const thejuiceconst: TheJuice;
 function makeRegistry (): Registry {
   //todo do better
   if (typeof window === 'object') {
-    // the juice is there in the air (global)
-    return new Registry('client', thejuiceconst.registry);
+    return new Registry('client', new Error().stack);
   } else if (typeof process === 'object'
     && process.env['RATHERNOT_BUILDING'] !== undefined) {
-    return new Registry('build');
+    return new Registry('build', new Error().stack);
   }
-  return new Registry('server', (thejuicefile as TheJuice).registry);
+  return new Registry('server', new Error().stack, (thejuicefile as TheJuice).registry);
 }
 const registryGlobal = makeRegistry();
 export default registryGlobal;

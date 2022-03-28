@@ -10,7 +10,7 @@ import { getPackin, packUserSpace } from './adventures-in-webpack.js';
 import { mkdtemp, writeFile, copyFile } from 'fs/promises';
 import { resolve, parse, relative } from "path";
 import { tmpdir } from 'os';
-import { RegistryState }  from '../../../common/registry';
+import { RegistryState, Registry }  from '../../../common/registry';
 import chalk from 'chalk';
 //@ts-ignore
 import * as cliSpinner from 'cli-spinner';
@@ -20,18 +20,18 @@ const Spinner = cliSpinner.Spinner;
 //todo: parse args
 //todo: help
 async function cli () {
-  
   try {
     const args = parseArgs();
     const workingDir =  await spinOn(mkdtemp(resolve(tmpdir(), 'rnc')), 'creating temp dir');
     console.log(chalk.green(` ➡ ${workingDir}`));
     await spinOn(tsCompile(args, workingDir), 'compiling user typescript');
-    const UI = await spinOn(parseUserCode(workingDir), 'parsing user files');
-    const dockerName = UI.name.toLowerCase().replace(' ', '_')
-    await spinOn(pack(getPackin(UI, workingDir)), 'packing runtime');
-    await spinOn(build(dockerName, workingDir), `building docker image '${dockerName}'`);
-    console.log('running docker');
-    await run(dockerName);
+    const registry = await spinOn(parseUserCode(workingDir), 'parsing user files');
+    console.log(registry.getState())
+    // const dockerName = UI.name.toLowerCase().replace(' ', '_')
+    // await spinOn(pack(getPackin(UI, workingDir)), 'packing runtime');
+    // await spinOn(build(dockerName, workingDir), `building docker image '${dockerName}'`);
+    // console.log('running docker');
+    // await run(dockerName);
   } catch (e) {
     //todo: do better
     console.error('');
@@ -72,8 +72,10 @@ function relativeUserSpace (absolutePath: string, dir: string): string {
 }
 
 async function createBuildBootstrapFile (absolutePathEntry: string, dir: string): Promise<string> {
+  const registryModuleAbsolutePath
+    = resolve(__dirname, '../../../common', 'registry.js');
   const fileContents = `
-import Registry from '${resolve(dir, __dirname, 'rathernot-bootstrap-build')}';
+import Registry from '${relativeUserSpace(registryModuleAbsolutePath, dir)}';
 export { default as userspace } from '${relativeUserSpace(absolutePathEntry, dir)}'
 export default Registry;
 `;
@@ -84,10 +86,8 @@ export default Registry;
   return filepath;
 }
 
-//todo: this is broken and doesn't actually blow up on type errors
 async function tsCompile(absolutePathEntry: string, dir: string): Promise<any> {
   const bsFile = await createBuildBootstrapFile(absolutePathEntry, dir);
-  // return pack([packUserSpace(bsFile, dir)]).then(stats => stats)
   return new Promise(function (resolve, reject) {
     const tsc = spawn('tsc', ['--outDir', dir ], { cwd: dir });
     tsc.stderr.on('data', l => console.error(l.toString()));
@@ -102,13 +102,11 @@ async function tsCompile(absolutePathEntry: string, dir: string): Promise<any> {
   });
 }
 
-async function parseUserCode (dir: string): Promise<UserApplication> {
-  // todo: figure out the registry somehow
-  // maybe enter userspace from a wrapping file
-  // return thejuice here so we can inject it to the client & server
-  const userSpace = require(resolve(dir, dir.slice(1), 'build-bootstrap.js')).default;
-  console.log(userSpace.getState() as RegistryState);
-  return parseForms(userSpace.constructor.name, [userSpace]);
+async function parseUserCode (dir: string): Promise<Registry> {
+  const entry = resolve(dir, dir.slice(1), 'build-bootstrap.js');
+  const userSpace = require(entry).default as Registry;
+  return userSpace;
+  // return parseForms(userSpace.constructor.name, [userSpace]);  
 }
 
 async function pack (packs: any[]) {

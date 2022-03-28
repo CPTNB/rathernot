@@ -92,3 +92,7 @@ export function Service<Input extends object>(input: Input): ServiceReturnType<I
   const callingFile = get()[1].getFileName();
   return Registry.addService(input, callingFile);
 }
+
+export function _getRegistry(): RegistryState {
+  return Registry.getState();
+}
