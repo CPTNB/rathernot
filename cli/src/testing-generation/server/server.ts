@@ -1,21 +1,21 @@
 import fastify from 'fastify'
 import fastifyStatic from 'fastify-static';
 import * as path from 'path';
-import { UserApplication } from '../../../../common/application';
+import { RegistryState } from '../../../../common/registry';
 //@ts-ignore
 import * as thejuice from './thejuice';
-const UI: UserApplication = thejuice;
+const Registry: RegistryState = thejuice as any;
 
 
 const server = fastify();
 
 const indexText: string = `<html>
 <head>
-<title>${UI.name}</title>
+<title>rathernot</title>
 </head>
 <body>
 <div id="root"></div>
-<script>UI=${JSON.stringify(UI)}</script>
+<script>Registry=${JSON.stringify(Registry)}</script>
 <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
 <script src="./client.js"></script>
@@ -38,14 +38,14 @@ server.get('/health', async (request, reply) => {
   return 'ok\n'
 });
 
-Object.entries(UI.forms).forEach(([name, form]) => {
-  server.post(`/${name}`, async (request, reply) => {
+// Object.entries(UI.forms).forEach(([name, form]) => {
+//   server.post(`/${name}`, async (request, reply) => {
 
-    //todo: execute back-end
-    console.log(request.body)
-    return 'ok'
-  });
-});
+//     //todo: execute back-end
+//     console.log(request.body)
+//     return 'ok'
+//   });
+// });
 
 server.listen(3000, "0.0.0.0", (err, address) => {
   if (err) {

@@ -25,8 +25,8 @@ class Sqs {
 
 export default Service(new Sqs());
 
-const anotherguy = {
-  foobar: () => 'foobar'
-}
+// const anotherguy = {
+//   foobar: () => 'foobar'
+// }
 
-Service(anotherguy);
+// export const AnotherGuy = Service(anotherguy);

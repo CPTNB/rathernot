@@ -7,7 +7,7 @@ import { thejuicefile } from './thejuice'
 
 type AsyncFn = (...args: any) => Promise<any>
 
-type RegistryNode = {
+export type RegistryNode = {
   filename: string,
   functions: {
     [key: string]: {

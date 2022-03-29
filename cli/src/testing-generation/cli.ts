@@ -7,7 +7,10 @@ import webpack from 'webpack';
 import { spawn } from 'child_process';
 //@ts-ignore
 import { getPackin, packUserSpace } from './adventures-in-webpack.js';
-import { mkdtemp, writeFile, copyFile } from 'fs/promises';
+//@ts-ignore
+import { getClientWebpack } from './client-webpack.js';
+import { codeGen } from './client-code-gen';
+import { mkdtemp, writeFile, copyFile, rename, symlink } from 'fs/promises';
 import { resolve, parse, relative } from "path";
 import { tmpdir } from 'os';
 import { RegistryState, Registry }  from '../../../common/registry';
@@ -24,11 +27,13 @@ async function cli () {
     const args = parseArgs();
     const workingDir =  await spinOn(mkdtemp(resolve(tmpdir(), 'rnc')), 'creating temp dir');
     console.log(chalk.green(` ➡ ${workingDir}`));
+    await linkNodeModules(workingDir);
     await spinOn(tsCompile(args, workingDir), 'compiling user typescript');
     const registry = await spinOn(parseUserCode(workingDir), 'parsing user files');
     console.log(registry.getState())
+    await spinOn(packClient(registry, args, workingDir), 'packing client');
+    await spinOn(pack(getPackin(registry, workingDir)), 'packing server');
     // const dockerName = UI.name.toLowerCase().replace(' ', '_')
-    // await spinOn(pack(getPackin(UI, workingDir)), 'packing runtime');
     // await spinOn(build(dockerName, workingDir), `building docker image '${dockerName}'`);
     // console.log('running docker');
     // await run(dockerName);
@@ -54,6 +59,11 @@ async function spinOn<T> (work: Promise<T>, message: string): Promise<T> {
     console.log(chalk.red(`✖ ${message}`));
     throw e;
   }
+}
+
+async function linkNodeModules (workingDir: string) {
+  //todo: find the modules!
+  return symlink(resolve(__dirname, '../../node_modules'), resolve(workingDir, 'node_modules'));
 }
 
 function parseArgs () {
@@ -106,7 +116,33 @@ async function parseUserCode (dir: string): Promise<Registry> {
   const entry = resolve(dir, dir.slice(1), 'build-bootstrap.js');
   const userSpace = require(entry).default as Registry;
   return userSpace;
-  // return parseForms(userSpace.constructor.name, [userSpace]);  
+}
+
+//todo: divorce from React
+//todo: Page
+async function createClientBootstrapFile (entry: string, dir: string) {
+  const code = `
+import * as React from "react"
+import * as ReactDOM from 'react-dom'
+import App from './${removeFileExtension(entry).slice(1)}';
+
+ReactDOM.render(App(), document.getElementById('root'));`
+  await writeFile(resolve(dir, 'client-stub.jsx'), code);
+}
+
+async function packClient (registry: Registry, entryFile: string, dir: string): Promise<any> {
+  // create that entry file
+  // await copyFile(resolve(__dirname, 'client-stub.jsx'), resolve(dir, 'client-stub.jsx'))
+  await createClientBootstrapFile(entryFile, dir);
+  const clientCode = codeGen(registry);
+  await Promise.all(Object.entries(clientCode).map(async ([filename, code]) => {
+    await rename(filename, filename + 'real');
+    await writeFile(filename, code);
+  }));
+  await pack(getClientWebpack(dir));
+  // return Promise.all(Object.keys(clientCode).map(async (filename) => {
+  //   await rename(filename + 'real', filename);
+  // }));
 }
 
 async function pack (packs: any[]) {

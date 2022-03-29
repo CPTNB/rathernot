@@ -1,7 +1,7 @@
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 const CopyPlugin = require("copy-webpack-plugin");
-const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+// const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 // const ForkTsCheckerNotifierWebpackPlugin = require('fork-ts-checker-notifier-webpack-plugin');
 
 const ts = {
@@ -20,21 +20,17 @@ const dev = {
   mode: "development"
 }
 
-module.exports.getPackin = function getPackin(UI, outDir) {
+module.exports.getPackin = function getPackin(registry, outDir) {
   const client = {
-    entry: './client/App.tsx',
-    module: { rules: [ts] },
-    ...resolveTs,
+    entry: './client/App.tsx',// needs to be an entry shim
+    module: { rules: [ts] },//not ts
+    ...resolveTs,//not ts
     ...dev,
     externals: {
-      react: 'React',
-      "react-dom": 'ReactDOM'
+      react: 'React', //comes from resource
+      "react-dom": 'ReactDOM' //comes from resource
     },
     plugins: [
-      new ForkTsCheckerWebpackPlugin({
-        async: false,
-      }),
-      // new ForkTsCheckerNotifierWebpackPlugin({ title: 'TypeScript', excludeWarnings: false })
     ],
     output: {
       filename: 'client.js',
@@ -49,7 +45,7 @@ module.exports.getPackin = function getPackin(UI, outDir) {
           test: /thejuice.*/,
           use: {
             loader: 'val-loader',
-            options: UI
+            options: registry.getState()
           }
         },
         ts
@@ -81,38 +77,38 @@ module.exports.getPackin = function getPackin(UI, outDir) {
   return [client, server]
 }
 
-module.exports.packUserSpace = function packUserSpace (absolutePathToUserSpace, outDir) {
-  return {
-    entry: absolutePathToUserSpace,
-    module: {
-      rules: [
-        ts
-      ]
-    },
-    ...resolveTs,
-    ...dev,
-    target: 'node',
-    externals: [
-      {
-        ...nodeExternals(),
-        react: 'React',
-        "react-dom": 'ReactDOM'
-      }
-    ],
-    externalsPresets: {
-        node: true
-    },
-    plugins: [
-      new ForkTsCheckerWebpackPlugin({
-        async: false,
-      }),
-      // new ForkTsCheckerNotifierWebpackPlugin({ title: 'TypeScript', excludeWarnings: false })
-    ],
-    output: {
-      filename: 'userspace.js',
-      path: path.resolve(outDir),
-      libraryTarget: 'commonjs',
-      chunkFormat: 'commonjs'
-    },
-  }
-}
+// module.exports.packUserSpace = function packUserSpace (absolutePathToUserSpace, outDir) {
+//   return {
+//     entry: absolutePathToUserSpace,
+//     module: {
+//       rules: [
+//         ts
+//       ]
+//     },
+//     ...resolveTs,
+//     ...dev,
+//     target: 'node',
+//     externals: [
+//       {
+//         ...nodeExternals(),
+//         react: 'React',
+//         "react-dom": 'ReactDOM'
+//       }
+//     ],
+//     externalsPresets: {
+//         node: true
+//     },
+//     plugins: [
+//       new ForkTsCheckerWebpackPlugin({
+//         async: false,
+//       }),
+//       // new ForkTsCheckerNotifierWebpackPlugin({ title: 'TypeScript', excludeWarnings: false })
+//     ],
+//     output: {
+//       filename: 'userspace.js',
+//       path: path.resolve(outDir),
+//       libraryTarget: 'commonjs',
+//       chunkFormat: 'commonjs'
+//     },
+//   }
+// }
