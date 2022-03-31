@@ -10,10 +10,10 @@ import { getPackin, packUserSpace } from './adventures-in-webpack.js';
 //@ts-ignore
 import { getClientWebpack } from './client-webpack.js';
 import { codeGen } from './client-code-gen';
-import { mkdtemp, writeFile, copyFile, rename, symlink } from 'fs/promises';
-import { resolve, parse, relative } from "path";
+import { cp, mkdtemp, readFile, writeFile, copyFile, rename, symlink } from 'fs/promises';
+import { resolve, parse, relative, basename, extname } from "path";
 import { tmpdir } from 'os';
-import { RegistryState, Registry }  from '../../../common/registry';
+import { ServiceCollector } from './service-collector';
 import chalk from 'chalk';
 //@ts-ignore
 import * as cliSpinner from 'cli-spinner';
@@ -29,14 +29,15 @@ async function cli () {
     console.log(chalk.green(` ➡ ${workingDir}`));
     await linkNodeModules(workingDir);
     await spinOn(tsCompile(args, workingDir), 'compiling user typescript');
-    const registry = await spinOn(parseUserCode(workingDir), 'parsing user files');
-    console.log(registry.getState())
-    await spinOn(packClient(registry, args, workingDir), 'packing client');
-    await spinOn(pack(getPackin(registry, workingDir)), 'packing server');
-    // const dockerName = UI.name.toLowerCase().replace(' ', '_')
-    // await spinOn(build(dockerName, workingDir), `building docker image '${dockerName}'`);
-    // console.log('running docker');
-    // await run(dockerName);
+    const collector = await spinOn(parseUserCode(workingDir), 'parsing user files');
+    // console.log(collector.getState())
+    await spinOn(packClient(collector, args, workingDir), 'packing client');
+    await spinOn(genServer(collector, workingDir), 'generating server');
+    // await spinOn(pack(getPackin(collector, workingDir)), 'packing server');
+    const dockerName = basename(args, extname(args)).toLowerCase().replace(' ', '_')
+    await spinOn(build(dockerName, workingDir), `building docker image '${dockerName}'`);
+    console.log('running docker');
+    await run(dockerName);
   } catch (e) {
     //todo: do better
     console.error('');
@@ -62,8 +63,10 @@ async function spinOn<T> (work: Promise<T>, message: string): Promise<T> {
 }
 
 async function linkNodeModules (workingDir: string) {
+  await cp(resolve(__dirname, 'package-stub.json'), resolve(workingDir, 'package.json'));
   //todo: find the modules!
   return symlink(resolve(__dirname, '../../node_modules'), resolve(workingDir, 'node_modules'));
+  // return cp(resolve(__dirname, '../../node_modules'), resolve(workingDir, 'node_modules'), { recursive: true })
 }
 
 function parseArgs () {
@@ -83,11 +86,11 @@ function relativeUserSpace (absolutePath: string, dir: string): string {
 
 async function createBuildBootstrapFile (absolutePathEntry: string, dir: string): Promise<string> {
   const registryModuleAbsolutePath
-    = resolve(__dirname, '../../../common', 'registry.js');
+    = resolve(__dirname, 'service-collector.js');
   const fileContents = `
-import Registry from '${relativeUserSpace(registryModuleAbsolutePath, dir)}';
+import ServiceCollector from '${relativeUserSpace(registryModuleAbsolutePath, dir)}';
 export { default as userspace } from '${relativeUserSpace(absolutePathEntry, dir)}'
-export default Registry;
+export default ServiceCollector;
 `;
   const filepath = resolve(dir, 'build-bootstrap.ts')
   await writeFile(filepath, fileContents);
@@ -112,9 +115,9 @@ async function tsCompile(absolutePathEntry: string, dir: string): Promise<any> {
   });
 }
 
-async function parseUserCode (dir: string): Promise<Registry> {
+async function parseUserCode (dir: string): Promise<ServiceCollector> {
   const entry = resolve(dir, dir.slice(1), 'build-bootstrap.js');
-  const userSpace = require(entry).default as Registry;
+  const userSpace = require(entry).default as ServiceCollector;
   return userSpace;
 }
 
@@ -130,13 +133,14 @@ ReactDOM.render(App(), document.getElementById('root'));`
   await writeFile(resolve(dir, 'client-stub.jsx'), code);
 }
 
-async function packClient (registry: Registry, entryFile: string, dir: string): Promise<any> {
+async function packClient (collector: ServiceCollector, entryFile: string, dir: string): Promise<any> {
   // create that entry file
   // await copyFile(resolve(__dirname, 'client-stub.jsx'), resolve(dir, 'client-stub.jsx'))
   await createClientBootstrapFile(entryFile, dir);
-  const clientCode = codeGen(registry);
+  const clientCode = collector.codeGenClients();
+  // console.log(clientCode)
   await Promise.all(Object.entries(clientCode).map(async ([filename, code]) => {
-    await rename(filename, filename + 'real');
+    await rename(filename, removeFileExtension(filename) + '._service.js');
     await writeFile(filename, code);
   }));
   await pack(getClientWebpack(dir));
@@ -162,6 +166,23 @@ async function pack (packs: any[]) {
       }
     });
   })
+}
+
+async function genServer (collector: ServiceCollector, dir: string) {
+  const serverFiles = Object.keys(collector.codeGenClients())
+    .map(filename => removeFileExtension(filename).replace(dir, '.') + '._service')
+    .map(fn => `'${fn}'`)
+    .join(', ');
+  await writeFile(resolve(dir, 'service-juice.js'), `module.exports = {
+    files: [${serverFiles}],
+    collector: '.${resolve(__dirname, 'service-collector')}'
+  }`)
+  /*
+  The server-stub file is created by:
+../../node_modules/.bin/esbuild server.ts --bundle --outfile=server-stub.js --platform=node --external:./service-juice.js
+  */
+  await copyFile(resolve(__dirname, './server-stub.js'), resolve(dir, 'server.js'));
+  await copyFile(resolve(__dirname, 'Dockerfile'), resolve(dir, 'Dockerfile'));
 }
 
 async function build (name: string, dir: string) {

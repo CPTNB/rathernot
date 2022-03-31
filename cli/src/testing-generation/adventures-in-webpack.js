@@ -37,44 +37,44 @@ module.exports.getPackin = function getPackin(registry, outDir) {
       path: path.resolve(outDir, 'client')
     }
   }
-  const server = {
-    entry: './server/server.ts',
-    module: {
-      rules: [
-        {
-          test: /thejuice.*/,
-          use: {
-            loader: 'val-loader',
-            options: registry.getState()
-          }
-        },
-        ts
-      ]
-    },
-    ...resolveTs,
-    ...dev,
-    target: 'node',
-    externals: [nodeExternals()],
-    externalsPresets: {
-        node: true
-    },
-    plugins: [
-      new CopyPlugin({
-        patterns: [
-          { from: path.resolve(__dirname, "Dockerfile") },
-        ],
-      }),
-      new ForkTsCheckerWebpackPlugin({
-        async: false,
-      }),
-      // new ForkTsCheckerNotifierWebpackPlugin({ title: 'TypeScript', excludeWarnings: false })
-    ],
-    output: {
-      filename: 'server.js',
-      path: path.resolve(outDir)
-    },
-  }
-  return [client, server]
+  // const server = {
+  //   entry: './server/server.ts',
+  //   module: {
+  //     rules: [
+  //       {
+  //         test: /thejuice.*/,
+  //         use: {
+  //           loader: 'val-loader',
+  //           options: registry.getState()
+  //         }
+  //       },
+  //       ts
+  //     ]
+  //   },
+  //   ...resolveTs,
+  //   ...dev,
+    // target: 'node',
+    // externals: [nodeExternals()],
+    // externalsPresets: {
+    //     node: true
+    // },
+  //   plugins: [
+  //     new CopyPlugin({
+  //       patterns: [
+  //         { from: path.resolve(__dirname, "Dockerfile") },
+  //       ],
+  //     }),
+  //     new ForkTsCheckerWebpackPlugin({
+  //       async: false,
+  //     }),
+  //     // new ForkTsCheckerNotifierWebpackPlugin({ title: 'TypeScript', excludeWarnings: false })
+  //   ],
+  //   output: {
+  //     filename: 'server.js',
+  //     path: path.resolve(outDir)
+  //   },
+  // }
+  return [client]
 }
 
 // module.exports.packUserSpace = function packUserSpace (absolutePathToUserSpace, outDir) {

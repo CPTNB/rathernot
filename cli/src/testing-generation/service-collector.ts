@@ -2,6 +2,7 @@ import { basename, extname } from 'path';
 
 //todo: add namespaces
 type ServiceFunction = {
+  filename: string,
   serviceId: string,
   fnName: string,
   fn: Function
@@ -9,9 +10,9 @@ type ServiceFunction = {
 
 type ListenerFunction = (path: string, fn: Function) => void
 
-type ServiceCollector = {
+export type ServiceCollector = {
   addService(obj: object, filename: string): void
-  codeGenClients(): { [key:string]: string }
+  codeGenClients(): { [filename:string]: string }
   acceptListener(listener: ListenerFunction): void
 }
 
@@ -79,45 +80,57 @@ module.exports = {
 }
 
 class BuildServiceCollector implements ServiceCollector {
-  private adder: RouteAdder;
-  private services: ServiceFunction[];
+  private adder: RouteAdder | undefined;
+  private services: ServiceFunction[] = [];
 
-  addService(serviceObj: object, filename: string) {
-    let serviceFns: ServiceFunction[];
-    const functionNames = getAllFunctions(serviceObj);
+  addService<T extends object> (serviceObj: T, filename: string): OnlyFunctionsOf<T> {
+    const functionNames = getAllFunctions(serviceObj) as (keyof T)[];
     const identifier = getIdentifier(serviceObj, filename);
 
     this.services = (this.services || [])
-      .concat(...(functionNames || [])
-        .map(fnName => [identifier, fnName, serviceObj[fnName]]));
+      .concat((functionNames || [])
+        .map(fnName => ({
+          filename: filename,
+          serviceId: identifier,
+          fnName: fnName as string,
+          fn: serviceObj[fnName] as unknown as Function
+        })));
 
-    this.listenToServices()
+    this.listenToServices();
+
+    return functionNames.reduce((obj, fnName) => Object.assign(obj, {
+      [fnName]: serviceObj[fnName] as unknown as Function
+    }) , {} as OnlyFunctionsOf<T> );
   }
 
-  codeGenClients (): { [serviceId:string]: string } {
+  codeGenClients (): { [filename:string]: string } {
     const map = (this.services || [])
       .reduce((idMap, sfn) => {
-        idMap[sfn.serviceId] = 
+        idMap[sfn.filename] = 
           (idMap[sfn.serviceId] || []).concat(sfn)
         return idMap;
-      }, {});
+      }, {} as { [serviceId:string]: ServiceFunction[] });
+
+    const codeMap: { [serviceId:string]: string } = {};
 
     Object.keys(map)
       .forEach(serviceId =>
-        map[serviceId] = getCodeFor(map[serviceId]));
+        codeMap[serviceId] = getCodeFor(map[serviceId]));
 
-    return map;
+    return codeMap;
   }
 
   acceptListener(listener: ListenerFunction) {
     this.adder = new RouteAdder(listener);
+    console.log('accepting')
+    console.log(this.services)
     this.listenToServices()
   }
 
   private listenToServices() {
     if (this.adder !== undefined) {
-      (this.services || []).forEach(s =>
-        this.adder.add(getPath(s), s.fn))
+      this.services.forEach(s =>
+        this.adder!.add(getPath(s), s.fn))
     }
   }
 }
@@ -125,3 +138,12 @@ class BuildServiceCollector implements ServiceCollector {
 const theSingleCollector = new BuildServiceCollector();
 
 export default theSingleCollector;
+
+type FirstWhenSecondExists<K, V> = V extends never ? never : K
+
+//todo: restrict this to just async functions
+export type OnlyFunctionsOf<T> = {
+  [Property in keyof T as
+    FirstWhenSecondExists<Property, Extract<T[Property], Function>>]:
+      T[Property]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "rnapp",
+  "version": "0.1.0",
+  "description": "CLI for the rathernot project",
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && jest"
+  },
+  "dependencies": {
+    "stack-trace": "v0.0.10"
+  }
+}

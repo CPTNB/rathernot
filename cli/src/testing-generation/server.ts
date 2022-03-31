@@ -1,30 +1,49 @@
 import fastify from 'fastify'
 import fastifyStatic from 'fastify-static';
 import * as path from 'path';
-import { RegistryState } from '../../../../common/registry';
-//@ts-ignore
-import * as thejuice from './thejuice';
-const Registry: RegistryState = thejuice as any;
-
+// import ServiceCollector from './service-collector';
 
 const server = fastify();
 
+//todo: Page and Resource
 const indexText: string = `<html>
 <head>
 <title>rathernot</title>
 </head>
 <body>
 <div id="root"></div>
-<script>Registry=${JSON.stringify(Registry)}</script>
-<script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
 <script src="./client.js"></script>
 </body>
 </html>
 `
+//<script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
+//<script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
 
 server.register(fastifyStatic, {
   root: path.resolve(__dirname, './client')
+});
+
+//@ts-ignore
+const serviceJuice = require('./service-juice.js');
+// console.log(serviceFiles);
+serviceJuice.files.forEach((f: string) => require(f));
+
+//@ts-ignore
+const ServiceCollector = require(serviceJuice.collector).default;
+ServiceCollector.acceptListener((path: string, fn: Function) => {
+  console.log(`adding route: POST@ ${path}`);
+  server.post(path, async (request, reply) => {
+    try {
+      // todo: this can clearly fail in a billion ways
+      const result = fn(...(request.body as Array<unknown>))
+      return JSON.stringify(result);
+    } catch (e) {
+      //todo: error handling
+      reply
+        .status(500)
+        .send((e as any).toString())
+    }
+  });
 });
 
 server.get('/', async (request, reply) => {
@@ -37,15 +56,6 @@ server.get('/', async (request, reply) => {
 server.get('/health', async (request, reply) => {
   return 'ok\n'
 });
-
-// Object.entries(UI.forms).forEach(([name, form]) => {
-//   server.post(`/${name}`, async (request, reply) => {
-
-//     //todo: execute back-end
-//     console.log(request.body)
-//     return 'ok'
-//   });
-// });
 
 server.listen(3000, "0.0.0.0", (err, address) => {
   if (err) {

@@ -37,6 +37,7 @@
     "@types/react": "^17.0.39",
     "@types/react-dom": "^17.0.13",
     "aws-sdk": "^2.1096.0",
+    "esbuild": "^0.14.29",
     "jest": "^27.5.1",
     "webpack-cli": "^4.9.2",
     "webpack-node-externals": "^3.0.0"

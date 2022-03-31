@@ -15,6 +15,6 @@
     "strictNullChecks": true,
     "skipLibCheck": true
   },
-  "include": ["cli.ts"],
+  "include": ["cli.ts", "server.ts"],
   "exclude": ["node_modules"]
 }

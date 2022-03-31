@@ -1,6 +1,5 @@
 import {
-  ServiceReturnType,
-  TheJuice
+  ServiceReturnType
 } from './application'
 //@ts-ignore
 import { thejuicefile } from './thejuice'
@@ -82,13 +81,13 @@ export class Registry {
             fn = () => Promise.reject(new Error("don't call service functions at build time"))
             break;
           case 'client':
-            fn = (...args: any) => fetch(`api/${service}/${prop}`, {
-              // todo: gets? (would need some TS splitting)
-              method: "POST",
-              headers: [['Content-Type', 'application/json']],
-              body: JSON.stringify(args)
-            });
-            break;
+            // fn = (...args: any) => fetch(`api/${service}/${prop}`, {
+            //   // todo: gets? (would need some TS splitting)
+            //   method: "POST",
+            //   headers: [['Content-Type', 'application/json']],
+            //   body: JSON.stringify(args)
+            // });
+            // break;
           case 'server':
             // todo: indirection
             fn = (...args: any) => (obj as any)[prop](...args);
@@ -127,19 +126,19 @@ export class Registry {
   }
 }
 
-declare const window: any;
-declare const process: any;
-declare const thejuiceconst: TheJuice;
+// declare const window: any;
+// declare const process: any;
+// declare const thejuiceconst: TheJuice;
 
-function makeRegistry (): Registry {
-  //todo do better
-  if (typeof window === 'object') {
-    return new Registry('client', new Error().stack);
-  } else if (typeof process === 'object'
-    && process.env['RATHERNOT_BUILDING'] !== undefined) {
-    return new Registry('build', new Error().stack);
-  }
-  return new Registry('server', new Error().stack, (thejuicefile as TheJuice).registry);
-}
-const registryGlobal = makeRegistry();
-export default registryGlobal;
+// function makeRegistry (): Registry {
+//   //todo do better
+//   if (typeof window === 'object') {
+//     return new Registry('client', new Error().stack);
+//   } else if (typeof process === 'object'
+//     && process.env['RATHERNOT_BUILDING'] !== undefined) {
+//     return new Registry('build', new Error().stack);
+//   }
+//   return new Registry('server', new Error().stack, (thejuicefile as TheJuice).registry);
+// }
+// const registryGlobal = makeRegistry();
+// export default registryGlobal;
