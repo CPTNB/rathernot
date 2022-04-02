@@ -122,8 +122,6 @@ class BuildServiceCollector implements ServiceCollector {
 
   acceptListener(listener: ListenerFunction) {
     this.adder = new RouteAdder(listener);
-    console.log('accepting')
-    console.log(this.services)
     this.listenToServices()
   }
 

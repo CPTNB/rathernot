@@ -129,7 +129,7 @@ import * as React from "react"
 import * as ReactDOM from 'react-dom'
 import App from './${removeFileExtension(entry).slice(1)}';
 
-ReactDOM.render(App(), document.getElementById('root'));`
+ReactDOM.render(App, document.getElementById('root'));`
   await writeFile(resolve(dir, 'client-stub.jsx'), code);
 }
 
@@ -144,9 +144,9 @@ async function packClient (collector: ServiceCollector, entryFile: string, dir: 
     await writeFile(filename, code);
   }));
   await pack(getClientWebpack(dir));
-  // return Promise.all(Object.keys(clientCode).map(async (filename) => {
-  //   await rename(filename + 'real', filename);
-  // }));
+  return Promise.all(Object.keys(clientCode).map(async (filename) => {
+    await rename(removeFileExtension(filename) + '._service.js', filename);
+  }));
 }
 
 async function pack (packs: any[]) {
@@ -170,7 +170,7 @@ async function pack (packs: any[]) {
 
 async function genServer (collector: ServiceCollector, dir: string) {
   const serverFiles = Object.keys(collector.codeGenClients())
-    .map(filename => removeFileExtension(filename).replace(dir, '.') + '._service')
+    .map(filename => removeFileExtension(filename).replace(dir, '.'))
     .map(fn => `'${fn}'`)
     .join(', ');
   await writeFile(resolve(dir, 'service-juice.js'), `module.exports = {

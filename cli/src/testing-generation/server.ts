@@ -31,7 +31,6 @@ serviceJuice.files.forEach((f: string) => require(f));
 //@ts-ignore
 const ServiceCollector = require(serviceJuice.collector).default;
 ServiceCollector.acceptListener((path: string, fn: Function) => {
-  console.log(`adding route: POST@ ${path}`);
   server.post(path, async (request, reply) => {
     try {
       // todo: this can clearly fail in a billion ways
