@@ -1,3 +1,8 @@
+# rust compilation stuff
+/target
+^target/
+target
+
 # Javascript artifacts
 *.js
 

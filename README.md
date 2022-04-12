@@ -1,11 +1,13 @@
 # 𝐓𝐡𝐞 𝐑𝐚𝐭𝐡𝐞𝐫𝐧𝐨𝐭 𝐖𝐞𝐛𝐚𝐩𝐩 𝐂𝐨𝐦𝐩𝐢𝐥𝐞𝐫 & 𝐎𝐒
-Write some (j|t)s(x)? files, get a container with a webapp inside
+Write some (j|t)s(x)? files, get a container with a webapp inside.
+
+Rathernot is a platform users can target that abstracts over the distributed nature of the web frontend, allowing users to build, distribute, consume, and run atomic applications.
 
 ## Web applications redefined in 4 syscalls
 
 | Rathernot syscall | Web Concepts |
 | ----- | --------- |
-| Service | Node/Deno Server, SSR, Bundling, Splitting, API, AJAX |
+| Service | Server Code, SSR, Bundling, Splitting, APIs, AJAX |
 |Page| Routing, URLs, Links|
 |Asset| Serving Assets, Linking, CDNs, Compression, MIME types, Progressive Images|
 |Memory|Caching, Cookies, Local Storage, Client State|
@@ -71,9 +73,3 @@ In this example, the rathernot compiler compiles your typescript, identifies the
 - a code generated service bundle that drives a node webserver at runtime
 
 The AWS SDK is included in the service bundle, but not the client bundle.  Rathernot injects a lightweight web 'operating system' that handles communication between the generated SPA and server.
-
-## Rathernot Core Objectives
-
-- Create a platform frontend developers can target that abstracts over the distributed nature of the frontend, allowing them to build, distribute, consume, and run atomic applications
-
-- Push performance decisions (ex: SSR, minification, bundling, transport protocol) to the compiler & OS

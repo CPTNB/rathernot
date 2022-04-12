@@ -1,0 +1,27 @@
+<head>
+
+</head>
+<body>
+    <script>
+const fetcher = async (path, args) => {
+  //todo: GET requests if no args?
+  return fetch(['api'].concat(path).join('/'), {
+      method: "POST",
+      headers: [['Content-Type', 'application/json']],
+      body: JSON.stringify(args)
+      //todo: allow for empty server responses
+    }).then(response => response.json())
+};
+
+// Level 9 javascript wizard spell
+// What does it produce?  Whatever you want!
+const wish = props => new Proxy(async (...args) => fetcher(props, args), {
+  get(_, prop) {
+    return wish((props || []).concat(prop));
+  }
+});
+
+_RNOS_CLIENT = (serviceId) => wish([serviceId]);
+  </script>
+  <script src="./client.js"></script>
+</body>
