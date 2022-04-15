@@ -3,6 +3,9 @@
 ^target/
 target
 
+*.rn
+.swc/
+
 # Javascript artifacts
 #*.js
 

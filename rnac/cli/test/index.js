@@ -1,4 +1,4 @@
-import { Service } from './rn';
+import { Service } from '../rn';
 /*
 server zone
 */

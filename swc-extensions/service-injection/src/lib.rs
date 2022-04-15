@@ -4,6 +4,8 @@ use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP, TransformPlugin
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+mod macros;
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
@@ -39,10 +41,6 @@ fn calculate_hash<T: Hash>(t: T) -> u64 {
     t.hash(&mut s);
     s.finish()
 }
-
-// fn default_prefix_pattern() -> String {
-//     "[filename]".to_owned()
-// }
 
 impl Default for Config {
     fn default() -> Self {
@@ -186,31 +184,16 @@ impl VisitMut for TransformVisitor {
 
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
         expr.visit_mut_children_with(self);
-        if let Expr::Call(call_expr) = &expr {
-            if let Callee::Expr(callee) = &call_expr.callee {
-                if let Expr::Ident(id) = &**callee {
-                    if &*id.sym == "Service" {
-                        *expr = self.replace_service_call(&call_expr)
-                    }
-                }
+        if_let_chain! {[
+            let Expr::Call(call_expr) = &expr,
+            let Callee::Expr(callee) = &call_expr.callee,
+            let Expr::Ident(id) = &**callee
+        ], {
+            if &*id.sym == "Service" {
+                *expr = self.replace_service_call(&call_expr)
             }
-        }
+        }};
     }
-
-    // fn visit_mut_call_expr(&mut self, call_expr: &mut CallExpr) {
-    //     call_expr.visit_mut_children_with(self);
-    //     if let Callee::Expr(expr) = &call_expr.callee {
-    //         if let Expr::Member(member_expr) = &**expr {
-    //             if let (Expr::Ident(obj_id), MemberProp::Ident(prop_id)) =
-    //                 (&*member_expr.obj, &member_expr.prop)
-    //             {
-    //                 if &*obj_id.sym == "console" && !self.ignore_console_method(&prop_id) {
-    //                     self.add_prefix_to_log(call_expr);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 /// An entrypoint to the SWC's transform plugin.
