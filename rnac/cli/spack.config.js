@@ -8,7 +8,7 @@ module.exports = config({
         'server': '/home/ec2-user/rn/rnac/cli/test/index.js',
     },
     output: {
-        path: '/tmp/rnhRTJbx'
+        path: '/tmp/rn5dRqGL'
     },
     // target: "node",
     options: {

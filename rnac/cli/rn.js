@@ -25,3 +25,9 @@ _service._RNOS_SERVER = (id, thing) => {
 _service._call = attemptToCall;
 
 export const Service = _service;
+
+export const URel = {
+  toString: () => window.location.href,
+  moveTo: (segment) => {console.log('tried to move')}
+}
+

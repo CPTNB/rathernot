@@ -1,0 +1,21 @@
+{
+
+    "jsc": {
+        "target": "es2018",
+        "keepClassNames": true,
+
+        "parser": {
+            "jsx": true,
+            "syntax": "ecmascript",
+            "sourceMaps": false
+        },
+        "experimental": {
+            "plugins": [
+                [
+                    "/home/ec2-user/rn/rnac/cli/service_injection.wasm",
+                    { "isClient": false }
+                ]
+            ]
+        }
+    }
+}
