@@ -1,4 +1,4 @@
-const { writeFile, readFile, chmod, mkdtemp, access, F_OK } = require('fs/promises');
+const { writeFile, readFile, chmod, mkdtemp, access, F_OK, rm } = require('fs/promises');
 const { resolve, parse } = require('path');
 const { tmpdir } = require('os');
 const { spawn } = require('child_process');
@@ -30,16 +30,11 @@ async function spawnP (command, args = []) {
 
 async function runSwc (config, filename) {
   const compiledModule = await spawnP(swcBinPath, ['--config-file', config, filename]);
-  return compiledModule.slice(38)// removes Successfully compiled 1 file with swc
+  return compiledModule.slice("Successfully compiled 1 file with swc.".length)
 }
 
 async function getShebang () {
-  try {
-    const nodeBinary = await spawnP('which', ['node']);
-    return Buffer.from(`#! ${nodeBinary} \n`);
-  } catch (e) {
-    return Buffer.from('');
-  }
+  return Buffer.from(`#! ${process.argv[0]} \n`);
 }
 
 const types = {
@@ -152,7 +147,7 @@ async function runEsBuild (tmpdir) {
     outfile: resolve(tmpdir, 'server.js'),
     plugins: [replaceServiceCalls(false)],
     // todo: figure out how to do this
-    // external: ['react', 'react-dom'],
+    external: ['react', 'react-dom'],
   }).catch(() => process.exit(1));
 
   return Promise.all([clientBundle, serviceBundle]);
@@ -193,6 +188,7 @@ async function rathernot () {
 
   await writeFile(destFile, Buffer.concat(allBuffs));
   await chmod(destFile, 0o755);
+  await rm(tmp, { recursive: true });
   const end = Date.now()
   console.log(`created ${destFile} in ${end - start}ms`);
 }
