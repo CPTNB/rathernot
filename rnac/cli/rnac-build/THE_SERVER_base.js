@@ -23,6 +23,13 @@ server.get('/health', async (request, reply) => {
   return 'ok\n'
 });
 
+server.get('*', async (request, reply) => {
+  reply
+      .status(200)
+      .header(...vfs['/'].mime)
+      .send(vfs['/'].buf);
+    });
+
 server.listen(port, '0.0.0.0', () => {
   console.log(`server listening on ${port}`);
 });

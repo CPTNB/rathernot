@@ -12,8 +12,6 @@ async function exists (path) {
     .catch(_ => false)
 }
 
-
-
 async function spawnP (command, args = []) {
   return new Promise(function (resolve, reject) {
     var allOutputs = []
@@ -72,6 +70,28 @@ async function createVfsBuffs (vfs) {
   return vfsBufs;
 }
 
+//todo: more
+const nodeStl = new Set(['fs/promises', 'path'])
+
+let nodeExternals = {
+  name: 'rathernot-node-externals',
+  setup(build) {
+  build.onResolve({ filter: /.*/ }, async (args) => {
+    if (nodeStl.has(args.path)) {
+      return {
+        path: args.path,
+        namespace: 'nodestl'
+      }
+    }
+  });
+  build.onLoad({filter: /.*/, namespace: 'nodestl' }, async (args) => {
+    return {
+      contents: "",
+      loader: 'js'
+    }
+  });
+  }
+}
 
 let replaceServiceCalls = (isClient) => ({
   name: 'rathernot-swc-compilation',
@@ -114,14 +134,13 @@ let replaceServiceCalls = (isClient) => ({
 });
 
 async function runEsBuild (tmpdir) {
-// skip node externals
   const clientBundle = build({
     entryPoints: [inputFilename],
     bundle: true,
-    format: 'iife',
-    platform: 'node', //surely this won't break
+    // minify: true,
+    // sourcemap: true,
     outfile: resolve(tmpdir, 'client.js'),
-    plugins: [replaceServiceCalls(true)],
+    plugins: [nodeExternals, replaceServiceCalls(true)],
   }).catch(() => process.exit(1));
 
 // don't bundle react
@@ -132,6 +151,8 @@ async function runEsBuild (tmpdir) {
     platform: 'node',
     outfile: resolve(tmpdir, 'server.js'),
     plugins: [replaceServiceCalls(false)],
+    // todo: figure out how to do this
+    // external: ['react', 'react-dom'],
   }).catch(() => process.exit(1));
 
   return Promise.all([clientBundle, serviceBundle]);

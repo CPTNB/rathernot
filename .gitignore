@@ -9,7 +9,7 @@ target
 # Javascript artifacts
 #*.js
 THE_SERVER.js
-
+*.wasm
 cdk.out
 
 # Logs

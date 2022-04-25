@@ -26,8 +26,33 @@ _service._call = attemptToCall;
 
 export const Service = _service;
 
-export const URel = {
-  toString: () => window.location.href,
-  moveTo: (segment) => {console.log('tried to move')}
+// this is dumb, just manage the path in the filesystem thing
+class _URel {
+  // todo
+  constructor(path) {
+      this.p = path
+  }
+  get() {
+    return [window.location.pathname, this.p]
+      .filter(x => x !== undefined)
+      .join('/')
+  }
+  concat(segment) {
+    return new _URel(segment);
+  }
+  href() {
+    return window.location.origin + window.location.pathname + this.p;
+  }
 }
+const thisURel = new _URel()
+
+export const URel = function () {
+  return thisURel.get();
+}
+URel.concat = (segment) => thisURel.concat(segment);
+
+// export const URel = {
+//   toString: () => window.location.pathname,
+//   concat: (segment) => window.location.pathname + '/' + segment
+// }
 

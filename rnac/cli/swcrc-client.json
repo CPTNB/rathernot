@@ -1,7 +1,7 @@
 {
     "jsc": {
         "target": "es2018",
-        "keepClassNames": true,
+        "keepClassNames": false,
         "parser": {
             "jsx": true,
             "syntax": "ecmascript"
