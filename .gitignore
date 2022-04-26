@@ -8,7 +8,7 @@ target
 
 # Javascript artifacts
 #*.js
-build/*
+linker/cli/build/*
 *.wasm
 cdk.out
 
