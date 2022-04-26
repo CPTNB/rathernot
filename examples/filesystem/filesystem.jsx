@@ -1,4 +1,4 @@
-import { Service } from '../rn';
+import { Service } from 'rathernot';
 import * as React from 'react';
 import * as ReactDom from 'react-dom/client';
 import { readFile, readdir } from 'fs/promises';

@@ -1,0 +1,20 @@
+{
+  "name": "rnac cli",
+  "version": "0.1.0",
+  "description": "",
+  "main": "cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "./build.sh"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@swc/cli": "^0.1.57",
+    "@swc/core": "^1.2.168",
+    "esbuild": "^0.14.38"
+  },
+  "devDependencies": {
+    "fastify": "^3.28.0"
+  }
+}

@@ -1,3 +1,5 @@
+// this file is appended to the end of the .rn file
+// a build step bundles fastify inline with this file
 const server = require('fastify')();
 const port = process.argv[2] || 3000;
 

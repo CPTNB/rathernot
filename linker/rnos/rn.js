@@ -1,5 +1,7 @@
-const _service = (thing) => console.log(thing)
+// throwaway
+const _service = (thing) => thing
 
+// this is what the server calls to find the right code to execute at runtime
 async function attemptToCall (props, args) {
   var ptr = registeredObjects[props[0]];
   for (var i =1; i < props.length; i++) {

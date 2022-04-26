@@ -1,9 +1,5 @@
-<head>
-
-</head>
-<body>
-    <div id="_RNOS_ROOT"></div>
-    <script>
+// this file is injected into the client bundle at the global scope
+// _RNOS_CLIENT and _RNOS_MAIN are injected into userspace code by SWC
 const fetcher = async (path, args) => {
   //todo: GET requests if no args?
   return fetch(['api'].concat(path).join('/'), {
@@ -28,8 +24,4 @@ _RNOS_CLIENT = (serviceId) => wish([serviceId]);
 //todo: something with serviceId
 _RNOS_MAIN = (serviceId, mainFn) => {
   mainFn(document.getElementById('_RNOS_ROOT'))
-}
-  </script>
-  <script src="./client.js"></script>
-  
-</body>
+};
