@@ -6,7 +6,7 @@ const { replaceServiceCalls } = require('../esbuild/runSWC');
 const { nodeExternals } = require('../esbuild/nodeExternals');
 const { rathernotExternals } = require('../esbuild/rathernotExternals');
 const swcPluginPath = resolve(__dirname, 'build/service_injection.wasm');
-const rnosServerFile = resolve('.', 'build/server.js');
+const rnosServerFile = resolve(__dirname, 'build/server.js');
 
 async function runEsBuild (tmpdir, inputFilename) {
   const clientBundle = build({
@@ -60,7 +60,7 @@ async function createVfsBuffs (vfs) {
 }
 
 async function createIndex () {
-  const rnosClient = await readFile(resolve('.', '../rnos/client.js'));
+  const rnosClient = await readFile(resolve(__dirname, '../rnos/client.js'));
   return Buffer.concat([
     Buffer.from('<head></head><body><div id="_RNOS_ROOT"></div><script>\n'),
     rnosClient,

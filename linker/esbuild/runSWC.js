@@ -1,7 +1,7 @@
 const { parse, resolve } = require('path');
 const { access, F_OK, writeFile } = require('fs/promises');
 const { spawnP } = require('../spawnP');
-const swcBinPath = '../node_modules/@swc/cli/bin/swc.js';
+const swcBinPath = resolve(__dirname, '../node_modules/@swc/cli/bin/swc.js');
 
 async function createSwcrcFile (tmpdir, pluginPath, isClient) {
   const swcrc = `{
