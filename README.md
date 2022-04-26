@@ -33,15 +33,22 @@ The output "binary" is just a javascript file with a node #!.
 
 ## Running it
 Right now you have to build some pieces from source:
+
 requires: node (16ish+), rust/cargo(1.58ish+)
+
 inside linker/: ```npm install```
+
 inside linker/swc/service-injection/: ```cargo install``` (maybe?? I am not good with rust?)
+
 inside linker/: ```npm run build```
+
 (you may need to ```chmod +x build.sh``` first)
 
 Then:
 ```node linker/cli/index.js examples/logger.js && ./logger.rn```
+
 go to [the app](http://localhost:3000)
+
 Note: you can just execute the .rn file because it has a #! pointing to your node binary.  You should  ```node ./logger.rn``` in deployed environments.  (or better yet, use a daemon)
 
 ## Why?
