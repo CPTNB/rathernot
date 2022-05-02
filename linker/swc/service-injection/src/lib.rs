@@ -114,11 +114,10 @@ impl TransformVisitor {
   fn rnos_client_call (&self, id_literal: ExprOrSpread) -> Expr {
     swc_plugin::ast::Expr::Call(CallExpr {
       span: DUMMY_SP,
-      callee: Callee::Expr(Box::new(Expr::Ident(Ident {
-        span: DUMMY_SP,
-        sym: JsWord::from("_RNOS_CLIENT"),
-        optional: false
-      }))),
+      callee: Callee::Expr(
+        Box::new(
+          Expr::Ident(
+            Ident::from((JsWord::from("_RNOS_CLIENT"), DUMMY_SP.ctxt))))),
       args: Vec::from([id_literal]),
       type_args: None
     })
