@@ -92,7 +92,7 @@ module.exports.link = async function link (nodeProcess, inputFilename) {
 
   const allBuffs = [];
 
-  allBuffs.push(Buffer.from('#! /usr/bin/env node\n'))//Buffer.from(`#! ${nodeProcess} \n`));
+  allBuffs.push(Buffer.from('#! /usr/bin/env node\n'))
   for(let i = 0; i < vfsBuffs.length; i++) {
     allBuffs.push(vfsBuffs[i]);
   }

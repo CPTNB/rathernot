@@ -10,11 +10,9 @@ mod macros;
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct Config {
-  // #[serde(default)]
-  // ignore: Vec<JsWord>,
-
-  // #[serde(default = "default_prefix_pattern")]
-  // prefix_pattern: String,
+  // hack for unit tests
+  #[serde(default)]
+  provided_slug: u64,
 
   #[serde(default)]
   is_client: bool,
@@ -37,12 +35,6 @@ struct ExprsWithFilename<'a> {
   filename: String
 }
 
-fn calculate_hash<T: Hash>(t: T) -> u64 {
-  let mut s = DefaultHasher::new();
-  t.hash(&mut s);
-  s.finish()
-}
-
 impl Default for Config {
   fn default() -> Self {
     serde_json::from_str("{}").unwrap()
@@ -56,6 +48,16 @@ struct TransformVisitor {
 impl TransformVisitor {
   pub fn new(config: Config) -> Self {
     Self { config }
+  }
+
+  fn calculate_hash<T: Hash>(&self, t: T) -> u64 {
+    // hack for unit tests
+    if self.config.provided_slug > 0 {
+      return self.config.provided_slug;
+    }
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
   }
 
   fn void_zero (&self) -> Expr {
@@ -93,7 +95,7 @@ impl TransformVisitor {
 
   fn gen_id_literal (&self, expr: Option<&Expr>, call_expr: Option<&CallExpr>) -> ExprOrSpread {
     let filename = self.config.filename.as_deref().unwrap_or_default();
-    let id = calculate_hash(ExprsWithFilename {
+    let id = self.calculate_hash(ExprsWithFilename {
       expr: expr,
       call_expr: call_expr,
       filename: filename.to_string()
@@ -313,85 +315,100 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
 
 // I can't get these to compile lol
 
-// #[cfg(test)]
-// mod transform_visitor_tests {
-//     use swc_ecma_transforms_testing::test;
+#[cfg(test)]
+mod transform_visitor_tests {
+    use swc_ecma_transforms_testing::test;
 
-//     use super::*;
+    use super::*;
 
-//     fn transform_visitor(config: Config) -> impl 'static + Fold + VisitMut {
-//         as_folder(TransformVisitor::new(config))
-//     }
+    fn transform_visitor(config: Config) -> impl 'static + Fold + VisitMut {
+        as_folder(TransformVisitor::new(config))
+    }
 
-//     test!(
-//         ::swc_ecma_parser::Syntax::default(),
-//         |_| transform_visitor(Config {
-//             filename: Some("test.js".to_owned()),
-//             ..Default::default()
-//         }),
-//         adds_default_prefix_when_filename_is_some,
-//         r#"console.log("hello world");"#,
-//         r#"console.log("test.js", "hello world");"#
-//     );
+    test!(
+        ::swc_ecma_parser::Syntax::default(),
+        |_| transform_visitor(Config {
+            filename: Some("input.js".to_owned()),
+            is_client: false,
+            provided_slug: 123,
+            ..Default::default()
+        }),
+        should_replace_service_call_with_slug,
+        r#"Service({});"#,
+        r#"Service._RNOS_SERVER(123, {});"#
+    );
 
-//     test!(
-//         ::swc_ecma_parser::Syntax::default(),
-//         |_| transform_visitor(Default::default()),
-//         doesnt_add_default_prefix_when_filename_is_none,
-//         r#"console.log("hello world");"#,
-//         r#"console.log("hello world");"#
-//     );
+    test!(
+        ::swc_ecma_parser::Syntax::default(),
+        |_| transform_visitor(Config {
+            filename: Some("input.js".to_owned()),
+            is_client: true,
+            provided_slug: 123,
+            ..Default::default()
+        }),
+        should_remove_client_service,
+        r#"Service({});"#,
+        r#"_RNOS_CLIENT(123);"#
+    );
 
-//     test!(
-//         ::swc_ecma_parser::Syntax::default(),
-//         |_| transform_visitor(Config {
-//             prefix_pattern: "custom-prefix:".to_owned(),
-//             ..Default::default()
-//         }),
-//         adds_custom_prefix_to_console_logs,
-//         r#"console.log("hello world");"#,
-//         r#"console.log("custom-prefix:", "hello world");"#
-//     );
+    // test!(
+    //     ::swc_ecma_parser::Syntax::default(),
+    //     |_| transform_visitor(Default::default()),
+    //     doesnt_add_default_prefix_when_filename_is_none,
+    //     r#"console.log("hello world");"#,
+    //     r#"console.log("hello world");"#
+    // );
 
-//     test!(
-//         ::swc_ecma_parser::Syntax::default(),
-//         |_| transform_visitor(Config {
-//             filename: Some("test.js".to_owned()),
-//             ..Default::default()
-//         }),
-//         adds_prefix_when_nested,
-//         r#"console.log("hello world", console.log("hello world"));"#,
-//         r#"console.log("test.js", "hello world", console.log("test.js", "hello world"));"#
-//     );
+    // test!(
+    //     ::swc_ecma_parser::Syntax::default(),
+    //     |_| transform_visitor(Config {
+    //         prefix_pattern: "custom-prefix:".to_owned(),
+    //         ..Default::default()
+    //     }),
+    //     adds_custom_prefix_to_console_logs,
+    //     r#"console.log("hello world");"#,
+    //     r#"console.log("custom-prefix:", "hello world");"#
+    // );
 
-//     test!(
-//         ::swc_ecma_parser::Syntax::default(),
-//         |_| transform_visitor(Default::default()),
-//         does_not_alter_console_table,
-//         r#"console.table(["apples", "oranges", "bananas"]);"#,
-//         r#"console.table(["apples", "oranges", "bananas"]);"#
-//     );
+    // test!(
+    //     ::swc_ecma_parser::Syntax::default(),
+    //     |_| transform_visitor(Config {
+    //         filename: Some("test.js".to_owned()),
+    //         ..Default::default()
+    //     }),
+    //     adds_prefix_when_nested,
+    //     r#"console.log("hello world", console.log("hello world"));"#,
+    //     r#"console.log("test.js", "hello world", console.log("test.js", "hello world"));"#
+    // );
 
-//     test!(
-//         ::swc_ecma_parser::Syntax::default(),
-//         |_| transform_visitor(Config {
-//             ignore: vec![JsWord::from("log")],
-//             ..Default::default()
-//         }),
-//         ignores_console_members,
-//         r#"console.log("hello world");"#,
-//         r#"console.log("hello world");"#
-//     );
+    // test!(
+    //     ::swc_ecma_parser::Syntax::default(),
+    //     |_| transform_visitor(Default::default()),
+    //     does_not_alter_console_table,
+    //     r#"console.table(["apples", "oranges", "bananas"]);"#,
+    //     r#"console.table(["apples", "oranges", "bananas"]);"#
+    // );
 
-//     test!(
-//         ::swc_ecma_parser::Syntax::default(),
-//         |_| transform_visitor(Config {
-//             prefix_pattern: "file: [filename]".to_owned(),
-//             filename: Some("test.js".to_owned()),
-//             ..Default::default()
-//         }),
-//         adds_filename,
-//         r#"console.log("hello world");"#,
-//         r#"console.log("file: test.js", "hello world");"#
-//     );
-// }
+    // test!(
+    //     ::swc_ecma_parser::Syntax::default(),
+    //     |_| transform_visitor(Config {
+    //         ignore: vec![JsWord::from("log")],
+    //         ..Default::default()
+    //     }),
+    //     ignores_console_members,
+    //     r#"console.log("hello world");"#,
+    //     r#"console.log("hello world");"#
+    // );
+
+    // test!(
+    //     ::swc_ecma_parser::Syntax::default(),
+    //     |_| transform_visitor(Config {
+    //         prefix_pattern: "file: [filename]".to_owned(),
+    //         filename: Some("test.js".to_owned()),
+    //         ..Default::default()
+    //     }),
+    //     adds_filename,
+    //     r#"console.log("hello world");"#,
+    //     r#"console.log("file: test.js", "hello world");"#
+    // );
+}
