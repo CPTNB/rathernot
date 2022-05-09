@@ -313,8 +313,6 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
   program.fold_with(&mut as_folder(TransformVisitor::new(config)))
 }
 
-// I can't get these to compile lol
-
 #[cfg(test)]
 mod transform_visitor_tests {
     use swc_ecma_transforms_testing::test;
@@ -350,65 +348,4 @@ mod transform_visitor_tests {
         r#"Service({});"#,
         r#"_RNOS_CLIENT(123);"#
     );
-
-    // test!(
-    //     ::swc_ecma_parser::Syntax::default(),
-    //     |_| transform_visitor(Default::default()),
-    //     doesnt_add_default_prefix_when_filename_is_none,
-    //     r#"console.log("hello world");"#,
-    //     r#"console.log("hello world");"#
-    // );
-
-    // test!(
-    //     ::swc_ecma_parser::Syntax::default(),
-    //     |_| transform_visitor(Config {
-    //         prefix_pattern: "custom-prefix:".to_owned(),
-    //         ..Default::default()
-    //     }),
-    //     adds_custom_prefix_to_console_logs,
-    //     r#"console.log("hello world");"#,
-    //     r#"console.log("custom-prefix:", "hello world");"#
-    // );
-
-    // test!(
-    //     ::swc_ecma_parser::Syntax::default(),
-    //     |_| transform_visitor(Config {
-    //         filename: Some("test.js".to_owned()),
-    //         ..Default::default()
-    //     }),
-    //     adds_prefix_when_nested,
-    //     r#"console.log("hello world", console.log("hello world"));"#,
-    //     r#"console.log("test.js", "hello world", console.log("test.js", "hello world"));"#
-    // );
-
-    // test!(
-    //     ::swc_ecma_parser::Syntax::default(),
-    //     |_| transform_visitor(Default::default()),
-    //     does_not_alter_console_table,
-    //     r#"console.table(["apples", "oranges", "bananas"]);"#,
-    //     r#"console.table(["apples", "oranges", "bananas"]);"#
-    // );
-
-    // test!(
-    //     ::swc_ecma_parser::Syntax::default(),
-    //     |_| transform_visitor(Config {
-    //         ignore: vec![JsWord::from("log")],
-    //         ..Default::default()
-    //     }),
-    //     ignores_console_members,
-    //     r#"console.log("hello world");"#,
-    //     r#"console.log("hello world");"#
-    // );
-
-    // test!(
-    //     ::swc_ecma_parser::Syntax::default(),
-    //     |_| transform_visitor(Config {
-    //         prefix_pattern: "file: [filename]".to_owned(),
-    //         filename: Some("test.js".to_owned()),
-    //         ..Default::default()
-    //     }),
-    //     adds_filename,
-    //     r#"console.log("hello world");"#,
-    //     r#"console.log("file: test.js", "hello world");"#
-    // );
 }

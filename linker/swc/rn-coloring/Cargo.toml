@@ -1,0 +1,10 @@
+[package]
+name = "rn-coloring"
+version = "0.1.0"
+edition = "2022"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+petgraph = "0.6.0"
