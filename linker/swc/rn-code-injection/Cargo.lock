@@ -1595,6 +1595,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "rn_code_injection"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "js-sys",
+ "rn_coloring",
+ "serde",
+ "serde_json",
+ "swc",
+ "swc_common",
+ "swc_ecma_parser 0.102.11",
+ "swc_ecma_transforms_testing",
+ "swc_plugin",
+ "swc_plugin_runner",
+ "wasmer",
+ "wasmer-vfs",
+ "wasmer-wasi",
+]
+
+[[package]]
+name = "rn_coloring"
+version = "0.1.0"
+dependencies = [
+ "petgraph",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1719,26 +1746,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "service-injection"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "js-sys",
- "petgraph",
- "serde",
- "serde_json",
- "swc",
- "swc_common",
- "swc_ecma_parser 0.102.11",
- "swc_ecma_transforms_testing",
- "swc_plugin",
- "swc_plugin_runner",
- "wasmer",
- "wasmer-vfs",
- "wasmer-wasi",
 ]
 
 [[package]]

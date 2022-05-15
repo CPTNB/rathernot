@@ -1,10 +1,18 @@
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
-use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP, TransformPluginProgramMetadata};
+use swc_plugin::{ast::*, plugin_transform, TransformPluginProgramMetadata};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use rn_coloring::*;
 
 mod macros;
+mod constructs;
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum CS {
+  Client(),
+  Server()
+}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -43,11 +51,12 @@ impl Default for Config {
 
 struct TransformVisitor {
   config: Config,
+  coloring: Coloring::<i32, CS>
 }
 
 impl TransformVisitor {
   pub fn new(config: Config) -> Self {
-    Self { config }
+    Self { config, coloring: Coloring::<i32, CS>::new(1) }
   }
 
   fn calculate_hash<T: Hash>(&self, t: T) -> u64 {
@@ -60,157 +69,32 @@ impl TransformVisitor {
     s.finish()
   }
 
-  fn void_zero (&self) -> Expr {
-    swc_plugin::ast::Expr::Unary(UnaryExpr {
-      span: DUMMY_SP,
-      op: UnaryOp::Void,
-      arg: Box::new(Expr::Lit(Lit::Num(Number {
-        raw: None,
-        span: DUMMY_SP,
-        value: 0.0
-      })))
-    })
-  }
-
-  fn void_decl (&self) -> Decl {
-    Decl::Var( VarDecl {
-      span: DUMMY_SP,
-      kind: VarDeclKind::Let,
-      declare: false,
-      decls: Vec::from([VarDeclarator {
-        span: DUMMY_SP,
-        definite: false,
-        name: Pat::Ident(BindingIdent {
-          id: Ident {
-            span: DUMMY_SP,
-            sym: JsWord::from("_RNOS_VOID"),
-            optional: false
-          },
-          type_ann: None
-        }),
-        init: None
-      }])
-    })
-  }
-
-  fn gen_id_literal (&self, expr: Option<&Expr>, call_expr: Option<&CallExpr>) -> ExprOrSpread {
-    let filename = self.config.filename.as_deref().unwrap_or_default();
-    let id = self.calculate_hash(ExprsWithFilename {
-      expr: expr,
-      call_expr: call_expr,
-      filename: filename.to_string()
-    });
-
-    ExprOrSpread {
-      spread: None,
-      expr: Box::new(Expr::Lit(Lit::Num(Number {
-        raw: None,
-        span: DUMMY_SP,
-        value: id as f64
-      })))
-    }
-  }
-
-  // transforms
-  // "Service(myobj)" => "_RNOS_CLIENT(15352409104929483000)"
-  fn rnos_client_call (&self, id_literal: ExprOrSpread) -> Expr {
-    swc_plugin::ast::Expr::Call(CallExpr {
-      span: DUMMY_SP,
-      callee: Callee::Expr(
-        Box::new(
-          Expr::Ident(
-            Ident::from((JsWord::from("_RNOS_CLIENT"), DUMMY_SP.ctxt))))),
-      args: Vec::from([id_literal]),
-      type_args: None
-    })
-  }
-
-  // transforms
-  // "Service(myobj)" => "Service._RNOS_SERVER(15352409104929483000, myobj)"
-  fn rnos_server_call(&self, id_literal: ExprOrSpread,  service_expr: &CallExpr) -> Expr {
-    if let Callee::Expr(callee) = &service_expr.callee {
-      let member = swc_plugin::ast::Expr::Member(MemberExpr {
-        span: DUMMY_SP,
-        prop: MemberProp::Ident(Ident {
-          
-            span: DUMMY_SP,
-            sym: JsWord::from("_RNOS_SERVER"),
-            optional: false
-          
-        }),
-        obj: callee.clone()
-      });
-
-      let mut args = service_expr.args.clone();
-
-      args.insert(0, id_literal);
-
-      return swc_plugin::ast::Expr::Call(CallExpr {
-        span: DUMMY_SP,
-        callee: Callee::Expr(Box::new(member)),
-        args: args,
-        type_args: None
-      })
-    }
-    // we kinda know this won't happen?
-    // todo: panic????
-    println!("This is a problematic situation: Service was called incorrectly! {:?}", service_expr);
-    return self.void_zero();
-  }
-
   fn replace_service_call (&self, service_expr: &CallExpr) -> Expr {
-    let service_id_literal = self.gen_id_literal(None, Some(service_expr));//todo: copy
+    let service_id_literal = constructs::id_literal(self.calculate_hash(service_expr));
     if self.config.is_client {
-      return self.rnos_client_call(service_id_literal)
+      return constructs::rnos_client_call(service_id_literal)
     } else {
-      return self.rnos_server_call(service_id_literal, service_expr)
+      return constructs::rnos_server_call(service_id_literal, service_expr)
     }
   }
 
-  // _RNOS_MAIN('slug', <this expr>)
-  fn main_invocation (&self, expr: Box<Expr>) -> Expr {
-    let literal = self.gen_id_literal(Some(&*expr), None);
-    let expr_or_spread = ExprOrSpread {
-      spread: None,
-      expr: expr
-    };
-    Expr::Call(CallExpr {
-      span: DUMMY_SP,
-      callee: Callee::Expr(Box::new(Expr::Ident(Ident {
-        span: DUMMY_SP,
-        sym: JsWord::from("_RNOS_MAIN"),
-        optional: false
-      }))),
-      args: Vec::from([literal, expr_or_spread]),
-      type_args: None
-    })
-  }
-
-  // let main  = _RNOS_MAIN('slug', <this fn dec>)
   fn replace_main_stmt (&self, expr: Box<Expr>) -> Decl {
     if !self.config.is_client {
-      return self.void_decl();
+      return constructs::void_decl();
     }
-    Decl::Var(VarDecl {
-      span: DUMMY_SP,
-      kind: VarDeclKind::Let,
-      declare: false,
-      decls: Vec::from([VarDeclarator {
-        span: DUMMY_SP,
-        definite: false,
-        name: Pat::Ident(BindingIdent {
-          id: Ident {
-            span: DUMMY_SP,
-            sym: JsWord::from("main"),
-            optional: false
-          },
-          type_ann: None
-        }),
-        init: Some(Box::new(self.main_invocation(expr)))
-      }])
-    })
+    let id = self.calculate_hash(&*expr);
+    return constructs::main_declaration(expr, id)
   }
 }
+
+impl Visit for TransformVisitor {
+  noop_visit_type!();
+
+  fn visit_expr(&mut self, expr: &Expr) {
+    // self.config.provided_slug = 456;
+  }
+}
+
 
 impl VisitMut for TransformVisitor {
   noop_visit_mut_type!();
@@ -234,7 +118,6 @@ impl VisitMut for TransformVisitor {
   // let main  = _RNOS_MAIN('slug', function main (root) { })
   fn visit_mut_decl(&mut self, decl: &mut Decl) {
     decl.visit_mut_children_with(self);
-
     let mut main_stmt = None;
     match decl {
       // function main (root) { }
@@ -310,7 +193,13 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
 
   config.filename = context.filename;
 
-  program.fold_with(&mut as_folder(TransformVisitor::new(config)))
+  let mut visitor = TransformVisitor::new(config);
+
+  // builds the graph
+  program.visit_with(&mut visitor);
+
+  // deletes/modifies code
+  program.fold_with(&mut as_folder(visitor))
 }
 
 #[cfg(test)]

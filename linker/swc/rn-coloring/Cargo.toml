@@ -1,5 +1,5 @@
 [package]
-name = "rn-coloring"
+name = "rn_coloring"
 version = "0.1.0"
 edition = "2021"
 
