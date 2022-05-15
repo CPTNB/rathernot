@@ -17,14 +17,14 @@ pub enum ColorResult<Colors> {
   // all paths to the node are colored the same
   Color(Colors),
 
-  // dominators of different colors found
-  ConflictingColors(Vec<Colors>),
-
   // no dominators, and no colored paths
   Uncolored(),
 
   // no dominators, with more than one colored path
   Multicolored(),
+
+  // dominators of different colors found
+  ConflictingColors(Vec<Colors>),
 
   // node does not exist in graph
   DoesNotExist(),
@@ -68,6 +68,20 @@ impl <NodeType: Copy + Eq + Hash, Colors: Copy + Eq> Coloring<NodeType, Colors> 
     self.graph.add_edge(local1, local2, ());
   }
 
+  fn add_dominating_color (&self, idx: &NodeIndex, colors: &mut Vec<Colors>) {
+    match self.dom_nodes.get(idx) {
+      Some(color) => {
+        for c in colors.iter() {
+          if c.eq(color) {
+            return;
+          }
+        }
+        colors.push(*color);
+      },
+      _ => ()
+    };
+  }
+
   pub fn get_color (&mut self, n: &NodeType) -> ColorResult<Colors> {
     match &self.doms {
       None => { self.doms = Some(simple_fast(&self.graph, self.root.unwrap())) },
@@ -85,52 +99,44 @@ impl <NodeType: Copy + Eq + Hash, Colors: Copy + Eq> Coloring<NodeType, Colors> 
       None => return ColorResult::Unreachable(),
       Some(dom_nodes) => {
         for dom in dom_nodes {
-          match self.dom_nodes.get(&dom) {
-            Some(color) => {
-              let mut non_unique = false;
-              for c in colors.iter() {
-                if c.eq(color) {
-                  non_unique = true;
-                  break;
-                }
-              }
-              if !non_unique {
-                colors.push(*color);  
-              }
-            },
-            _ => ()
-          };
+          self.add_dominating_color(&dom, &mut colors);
         }
       }
     };
-    if colors.len() == 1 {
-      return ColorResult::Color(colors[0]);
-    }
     if colors.len() > 1 {
       return ColorResult::ConflictingColors(colors);
     }
+    if colors.len() == 1 {
+      return ColorResult::Color(colors[0]);
+    }
 
     // no dominating colors ?
-    // either multicolored or no color
-    // dfs up from the node to look for dominating indices
-    // if one is found, its multicolored; otherwise uncolored
+    // get the anecstors to determine color
+    // if all ancestors are uncolored -> uncolored
+    // if all colored ancestors are the same color -> that color
+    // if there are multiple colors in ancestors -> multicolored
     let mut stack = vec!(*idx);
     let mut focus;
     let mut incoming;
     loop {
       focus = stack.pop().unwrap();
-      match self.dom_nodes.get(&focus) {
-        Some(_) => return ColorResult::Multicolored(),
-        _ => ()
-      };
+      self.add_dominating_color(&focus, &mut colors);
       incoming = self.graph.neighbors_directed(focus, Incoming);
       for n in incoming {
         stack.push(n);
       }
       if stack.len() == 0 {
-        return ColorResult::Uncolored();
+        break;
       }
     }
+
+    if colors.len() > 1 {
+      return ColorResult::Multicolored();
+    }
+    if colors.len() == 1 {
+      return ColorResult::Color(colors[0]);
+    }
+    return ColorResult::Uncolored();
   }
 }
 
@@ -198,6 +204,22 @@ mod coloring_tests {
 
     match coloring.get_color(&4) {
       ColorResult::<RB>::ConflictingColors(_) => assert_eq!(true, true),
+      _ => assert_eq!(true, false)
+    }
+  }
+
+  #[test]
+  fn test_two_paths_same_color () {
+    let mut coloring = Coloring::<i32, RB>::new(1);
+    coloring.add_edge(1, 2);
+    coloring.add_edge(1, 3);
+    coloring.add_edge(2, 4);
+    coloring.add_edge(3, 4);
+    coloring.mark_node_as_dom(2, RB::Red());
+    coloring.mark_node_as_dom(3, RB::Red());
+
+    match coloring.get_color(&4) {
+      ColorResult::<RB>::Color(RB::Red()) => assert_eq!(true, true),
       _ => assert_eq!(true, false)
     }
   }
