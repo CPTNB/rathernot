@@ -3,16 +3,11 @@ use serde::{Deserialize, Serialize};
 use swc_plugin::{ast::*, plugin_transform, TransformPluginProgramMetadata};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use rn_coloring::*;
+// use rn_coloring::ColorResult;
+// use rn_coloring_es::*;
 
 mod macros;
 mod constructs;
-
-#[derive(Clone, Copy, Eq, PartialEq)]
-enum CS {
-  Client(),
-  Server()
-}
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,13 +45,12 @@ impl Default for Config {
 }
 
 struct TransformVisitor {
-  config: Config,
-  coloring: Coloring::<i32, CS>
+  config: Config
 }
 
 impl TransformVisitor {
   pub fn new(config: Config) -> Self {
-    Self { config, coloring: Coloring::<i32, CS>::new(1) }
+    Self { config }
   }
 
   fn calculate_hash<T: Hash>(&self, t: T) -> u64 {
@@ -86,15 +80,6 @@ impl TransformVisitor {
     return constructs::main_declaration(expr, id)
   }
 }
-
-impl Visit for TransformVisitor {
-  noop_visit_type!();
-
-  fn visit_expr(&mut self, expr: &Expr) {
-    // self.config.provided_slug = 456;
-  }
-}
-
 
 impl VisitMut for TransformVisitor {
   noop_visit_mut_type!();
@@ -193,18 +178,18 @@ pub fn process_transform(program: Program, _metadata: TransformPluginProgramMeta
 
   config.filename = context.filename;
 
-  let mut visitor = TransformVisitor::new(config);
-
-  // builds the graph
-  program.visit_with(&mut visitor);
+  // todo
+  // let mut graph_builder = ColoringVisitor::new();
+  // // builds the graph
+  // program.visit_with(&mut visitor);
 
   // deletes/modifies code
-  program.fold_with(&mut as_folder(visitor))
+  program.fold_with(&mut as_folder(TransformVisitor::new(config)))
 }
 
 #[cfg(test)]
 mod transform_visitor_tests {
-    use swc_ecma_transforms_testing::test;
+    use swc_ecma_transforms_testing::{test};
 
     use super::*;
 

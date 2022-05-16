@@ -1,13 +1,14 @@
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::algo::dominators::{Dominators, simple_fast};
 use petgraph::Direction::Incoming;
+use petgraph::dot::{Dot, Config};
 use std::collections::HashMap;
 use std::hash::Hash;
 
 pub struct Coloring<NodeType: Copy + Eq + Hash, Colors: Copy + Eq> {
   node_indices: HashMap<NodeType, NodeIndex>,
   dom_nodes: HashMap<NodeIndex, Colors>,
-  graph: DiGraph::<NodeType, ()>,
+  pub graph: DiGraph::<NodeType, ()>,
   root: Option<NodeIndex>,
   doms: Option<Dominators<NodeIndex>>
 }
@@ -33,7 +34,7 @@ pub enum ColorResult<Colors> {
   Unreachable()
 }
 
-impl <NodeType: Copy + Eq + Hash, Colors: Copy + Eq> Coloring<NodeType, Colors> {
+impl <NodeType: Copy + Eq + Hash + std::fmt::Debug, Colors: Copy + Eq> Coloring<NodeType, Colors> {
   pub fn new (root: NodeType) -> Self {
     let mut s = Self {
       dom_nodes: HashMap::new(),
@@ -137,6 +138,10 @@ impl <NodeType: Copy + Eq + Hash, Colors: Copy + Eq> Coloring<NodeType, Colors> 
       return ColorResult::Color(colors[0]);
     }
     return ColorResult::Uncolored();
+  }
+
+  pub fn get_dot_graph (&self) -> String {
+    return format!("{:?}", Dot::with_config(&self.graph, &[Config::EdgeNoLabel]));
   }
 }
 
