@@ -197,4 +197,25 @@ mod coloring_visitor_tests {
       }
     }
   );
+
+  // half-baked
+  // test_visit!(
+  //   test_conflicting_colors,
+  //   ::swc_ecma_parser::Syntax::default(),
+  //   "const foo = bar; const bar = baz;  const baz = 'baz';",
+  //   |module: Module| {
+  //     let mut visitor = ColoringVisitor::new(true);
+  //     module.visit_with(&mut visitor);
+  //     let dot_graph = get_dot_graph(&mut visitor);
+  //     println!("{}", dot_graph);
+  //     let color = get_color_from_dot_graph(&dot_graph, "baz");
+  //     match color {
+  //       "blue" => Ok(()),
+  //       _ => {
+  //         println!("wrong color for baz: {}", color);
+  //         Err(())
+  //       }
+  //     }
+  //   }
+  // );
 }
