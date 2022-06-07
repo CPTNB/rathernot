@@ -21,35 +21,67 @@ fn hash_ident (id: &Ident) -> u64 {
 }
 
 struct EdgeVisitor<'a> {
-  from: &'a Ident,
-  graph: &'a mut ColoringVisitor
+  from: Ident,
+  coloring_wrapper: &'a mut ColoringWrapper
 }
 
 impl <'a> EdgeVisitor<'a> {
-  pub fn new (graph: &'a mut ColoringVisitor, from: &'a Ident) -> Self {
-    Self { from, graph }
+  pub fn new (coloring_wrapper: &'a mut ColoringWrapper, from: Ident) -> Self {
+    Self { from, coloring_wrapper }
   }
 }
 
 impl Visit for EdgeVisitor<'_> {
   noop_visit_type!();
   fn visit_ident(&mut self, id: &Ident) {
-    self.graph.add_edge(self.from, id);
+    self.coloring_wrapper.add_edge(&self.from, id);
   }
 }
 
+struct InvocationVisitor<'a> {
+  coloring_wrapper: &'a mut ColoringWrapper
+}
 
-pub struct ColoringVisitor {
+impl <'a> InvocationVisitor<'a> {
+  pub fn new (coloring_wrapper: &'a mut ColoringWrapper) -> Self {
+    Self { coloring_wrapper: coloring_wrapper }
+  }
+}
+
+impl Visit for InvocationVisitor<'_> {
+  noop_visit_type!();
+  //look at each function invocation looking for Service(...)
+  fn visit_call_expr(&mut self, expr: &CallExpr) {
+    if let Callee::Expr(callee) = &expr.callee {
+      if let Expr::Ident(name) = &**callee {
+        println!("inside the invocation visitor");
+        // self.coloring_wrapper.add_root_edge(id);
+        // we might not want to mark this ident as a root edge and dominant
+        // it may be enough to just edge visit all it's children
+        if &*name.sym == "Service"  {
+          expr.visit_children_with(&mut EdgeVisitor::new(self.coloring_wrapper, name.clone()))
+        }
+        // self.coloring_wrapper.coloring.mark_node_as_dom(hash_ident(id), color);
+        // expr.visit_children_with(&mut self.coloring_wrapper.check_color_and_descend(&name))
+        //expr.visit_children_with(&mut self.colorer.check_color_and_descend(&name))
+      }
+    }
+  }
+}
+
+struct ColoringWrapper {
   coloring: Coloring<u64, ClientServer>,
   debug: bool,
   names: HashMap<u64, String>
 }
 
-impl ColoringVisitor {
-  pub fn new (debug: bool) -> Self {
+impl ColoringWrapper {
+  fn new (debug: bool) -> Self {
+    let coloring = Coloring::<u64, ClientServer>::new(ROOT);
     let mut s = Self {
-      coloring: Coloring::<u64, ClientServer>::new(ROOT),
+      coloring: coloring,
       debug,
+      // invocation_visitor: InvocationVisitor::new(&mut coloring),
       names: HashMap::<u64, String>::new()
     };
     s.names.insert(ROOT, String::from("root"));
@@ -90,26 +122,110 @@ impl ColoringVisitor {
   }
 }
 
+
+pub struct ColoringVisitor {
+  coloring_wrapper: ColoringWrapper
+}
+
+impl ColoringVisitor {
+  pub fn new (debug: bool) -> Self {
+    Self { coloring_wrapper: ColoringWrapper::new(debug) }
+    // let coloring = Coloring::<u64, ClientServer>::new(ROOT);
+    // let mut s = Self {
+    //   coloring: coloring,
+    //   debug,
+    //   // invocation_visitor: InvocationVisitor::new(&mut coloring),
+    //   names: HashMap::<u64, String>::new()
+    // };
+    // s.names.insert(ROOT, String::from("root"));
+    // return s;
+  }
+
+  
+
+  fn is_coloring_ident (ident: &Ident) -> Option<ClientServer> {
+    if &*ident.sym == "main" {
+      return Some(ClientServer::Client());
+    }
+    if &*ident.sym == "Service" {
+      return Some(ClientServer::Server());
+    }
+    None
+  }
+
+  fn check_color_and_descend (&mut self, id: &Ident) -> EdgeVisitor {
+    match ColoringVisitor::is_coloring_ident(id) {
+      Some(color) => {
+        self.coloring_wrapper.add_root_edge(id);
+        self.coloring_wrapper.coloring.mark_node_as_dom(hash_ident(id), color);
+      },
+      _ => ()
+    }
+    EdgeVisitor::new(&mut self.coloring_wrapper, id.clone())
+  }
+}
+
 impl Visit for ColoringVisitor {
   noop_visit_type!();
 
+  // visit declarations of new things:
+
   fn visit_var_declarator(&mut self, decl: &VarDeclarator) {
     // todo: array decls
-                                          // why do I need to clone this pat?
+                                   // why do I need to clone this pat?
     if let Some(from_binding_id) = decl.name.clone().ident() {
-      
-      // if this is a service, then connect to root!
-      if &*from_binding_id.id.sym == "foo" {
-        self.add_root_edge(&from_binding_id.id);
-        self.coloring.mark_node_as_dom(hash_ident(&from_binding_id.id), ClientServer::Client());
-      }
-      if &*from_binding_id.id.sym == "bar" {
-        self.add_root_edge(&from_binding_id.id);
-        self.coloring.mark_node_as_dom(hash_ident(&from_binding_id.id), ClientServer::Server());
-      }
-      let mut children_visitor = EdgeVisitor::new(self, &from_binding_id.id);
-      decl.visit_children_with(&mut children_visitor);
+      let id = &from_binding_id.id;
+      decl.visit_children_with(&mut self.check_color_and_descend(id));
+      decl.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
     }
+  }
+
+  fn visit_import_named_specifier(&mut self, n: &ImportNamedSpecifier) {
+    n.visit_children_with(&mut self.check_color_and_descend(&n.local));
+    n.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
+  }
+
+  fn visit_assign_pat_prop(&mut self, n: &AssignPatProp) {
+    n.visit_children_with(&mut self.check_color_and_descend(&n.key));
+    n.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
+  }
+
+  fn visit_class_decl(&mut self, n: &ClassDecl) {
+    n.visit_children_with(&mut self.check_color_and_descend(&n.ident));
+    n.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
+  }
+
+  fn visit_class_expr(&mut self, n: &ClassExpr) {
+    if let Some(name) = &n.ident {
+      n.visit_children_with(&mut self.check_color_and_descend(&name));
+    }
+    n.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
+  }
+
+  fn visit_jsx_element_name(&mut self, n: &JSXElementName) {
+    if let JSXElementName::Ident(name) = n {
+      n.visit_children_with(&mut self.check_color_and_descend(&name));
+    }
+    n.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
+  }
+
+  fn visit_jsx_object(&mut self, n: &JSXObject) {
+    if let JSXObject::Ident(name) = n {
+      n.visit_children_with(&mut self.check_color_and_descend(&name));
+    }
+    n.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
+  }
+
+  fn visit_fn_decl(&mut self, n: &FnDecl) {
+    n.visit_children_with(&mut self.check_color_and_descend(&n.ident));
+    n.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
+  }
+
+  fn visit_fn_expr(&mut self, n: &FnExpr) {
+    if let Some(name) = &n.ident {
+      n.visit_children_with(&mut self.check_color_and_descend(&name));
+    }
+    n.visit_children_with(&mut InvocationVisitor::new(&mut self.coloring_wrapper));
   }
 }
 
@@ -135,7 +251,7 @@ mod coloring_visitor_tests {
   }
 
   fn get_dot_graph (visitor: &mut ColoringVisitor) -> String {
-    visitor.get_dot_graph(&|res| match res {
+    visitor.coloring_wrapper.get_dot_graph(&|res| match res {
       ColorResult::Color(ClientServer::Client()) => "red".to_string(),
       ColorResult::Color(ClientServer::Server()) => "blue".to_string(),
       ColorResult::Multicolored() => "purple".to_string(),
@@ -159,16 +275,48 @@ mod coloring_visitor_tests {
 
   use super::*;
 
+//   test_visit!(
+//     graph_test,
+//     ::swc_ecma_parser::Syntax::default(),
+//     r"
+// import { Service } from 'rathernot';
+// import { x } from 'x';
+
+// const foo = Service(x);
+
+// function main () { foo(); }
+
+// ",
+//     |module: Module| {
+//       let mut visitor = ColoringVisitor::new(true);
+//       module.visit_with(&mut visitor);
+//       let dot_graph = get_dot_graph(&mut visitor);
+//       println!("{}", dot_graph);
+//       match get_color_from_dot_graph(&dot_graph, "x") {
+//         "blue" => Ok(()),
+//         _ => Err(())
+//       }
+//     }
+//   );
+
   test_visit!(
-    graph_test,
+    test_client_code,
     ::swc_ecma_parser::Syntax::default(),
-    "const foo = baz; const bar = foo; const baz = 123",
+    r"
+import { Service } from 'rathernot';
+
+const x = 2;
+const foo = Service(x);
+
+function main () { foo(); }
+
+",
     |module: Module| {
       let mut visitor = ColoringVisitor::new(true);
       module.visit_with(&mut visitor);
       let dot_graph = get_dot_graph(&mut visitor);
       println!("{}", dot_graph);
-      match get_color_from_dot_graph(&dot_graph, "baz") {
+      match get_color_from_dot_graph(&dot_graph, "foo") {
         "red" => Ok(()),
         _ => Err(())
       }
@@ -181,7 +329,7 @@ mod coloring_visitor_tests {
   test_visit!(
     test_uncolored_node,
     ::swc_ecma_parser::Syntax::default(),
-    "const baz = foo; const foo = 123;  const bar = foo;",
+    r"const baz = foo; const foo = 123;  const bar = foo;",
     |module: Module| {
       let mut visitor = ColoringVisitor::new(true);
       module.visit_with(&mut visitor);
@@ -194,6 +342,28 @@ mod coloring_visitor_tests {
           println!("wrong color for root: {}", color);
           Err(())
         }
+      }
+    }
+  );
+
+  test_visit!(
+    test_function_invocation,
+    ::swc_ecma_parser::Syntax::default(),
+    r"
+import { Service } from 'rn';
+
+const x = 1;
+const foo = Service(x);
+",
+    |module: Module| {
+      let mut visitor = ColoringVisitor::new(true);
+      module.visit_with(&mut visitor);
+      let dot_graph = get_dot_graph(&mut visitor);
+      println!("{}", dot_graph);
+      let color = get_color_from_dot_graph(&dot_graph, "x");
+      match color {
+        "blue" => Ok(()),
+        _ => Err(())
       }
     }
   );
